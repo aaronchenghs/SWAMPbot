@@ -10,7 +10,6 @@ const app = buildApp();
 // ensure the server is accepting requests before creating the webhook
 app.listen(Number(cfg.PORT), async () => {
   console.log(`Server listening on ${cfg.PORT}`);
-
   if (cfg.USE_WEBHOOKS === 'true') {
     try {
       await ensureSubscription();
