@@ -12,8 +12,12 @@ app.listen(Number(cfg.PORT), async () => {
   console.log(`Server listening on ${cfg.PORT}`);
   if (cfg.USE_WEBHOOKS === 'true') {
     try {
-      await ensureSubscription();
-      console.log('✅ webhook subscription ensured on boot');
+      // Optional: tiny delay to avoid boot-time races in some hosts
+      setTimeout(() => {
+        ensureSubscription()
+          .then(() => console.log('✅ webhook subscription ensured'))
+          .catch((e) => console.error('ensureSubscription error', e));
+      }, 500);
     } catch (e) {
       console.error('ensureSubscription error', e);
     }

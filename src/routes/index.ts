@@ -8,7 +8,8 @@ export const routes = Router();
 routes.get('/healthz', (_req, res) => res.send('ok'));
 
 routes.use('/webhook', webhookRouter);
-routes.use(json());
 routes.use('/oauth', oauthRouter);
+
+routes.use(json());
 routes.use('/chats', chatsRouter);
 routes.use('/', testRouter);
