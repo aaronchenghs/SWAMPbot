@@ -35,14 +35,11 @@ RingCentral Team Messaging bot (Node + TypeScript).
 
 ```bash
 # 1) Clone
-git clone https://github.com/<you-or-org>/swampbot.git
+git clone https://github.com/aaronchenghs/SWAMPbot.git
 cd swampbot
 
 # 2) Install deps
 npm i
-
-# 3) Create .env from the example (edit values; see section below)
-cp .env.example .env
 
 # 4) Run the server (dev mode with auto-reload)
 npm run dev
@@ -56,6 +53,7 @@ npm run dev
 Create `.env` (or copy from `.env.example`) with **your** values:
 
 ```env
+# Ask Aaron Cheng from these values
 RINGCENTRAL_CLIENT_ID=YOUR_CLIENT_ID
 RINGCENTRAL_CLIENT_SECRET=YOUR_CLIENT_SECRET
 RINGCENTRAL_SERVER_URL=https://platform.ringcentral.com
