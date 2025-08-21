@@ -152,7 +152,7 @@ curl https://<your-tunnel>/chats
 curl -X POST https://<your-tunnel>/post-test   -H "Content-Type: application/json"   -d '{"chatId":"<CHAT_ID_FROM_/chats>"}'
 ```
 
-You should see “🤖 BangerBot is alive!” in that chat.
+You should see “🤖 SwampBot is alive!” in that chat.
 
 > If you don’t see it, make sure the **bot user is added to that chat** in RingCentral (chat → details → Add people → search bot name).
 
