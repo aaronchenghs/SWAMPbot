@@ -197,7 +197,7 @@ npm run format  # prettier
 **After cloning:**
 
 ```bash
-git clone https://github.com/<you-or-org>/swampbot.git
+git clone https://github.com/aaronchenghs/SWAMPbot.git
 cd swampbot
 npm i
 cp .env.example .env                 # fill values
