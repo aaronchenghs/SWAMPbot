@@ -1,7 +1,7 @@
-import { SDK } from "@ringcentral/sdk";
-import fs from "fs";
-import path from "path";
-import { cfg } from "../config";
+import { SDK } from '@ringcentral/sdk';
+import fs from 'fs';
+import path from 'path';
+import { cfg } from '../config';
 
 const rcsdk = new SDK({
   server: cfg.RINGCENTRAL_SERVER_URL,
@@ -11,23 +11,36 @@ const rcsdk = new SDK({
 
 export const platform = rcsdk.platform();
 
-const tokenFile = path.join(process.cwd(), "tokens.json");
+const tokenFile = path.join(process.cwd(), 'tokens.json');
 
 export function restoreAuthIfExists() {
-  if (fs.existsSync(tokenFile)) {
-    platform.auth().setData(JSON.parse(fs.readFileSync(tokenFile, "utf8")));
+  try {
+    const envToken = process.env.RC_BOT_TOKEN_JSON;
+    if (envToken) {
+      platform.auth().setData(JSON.parse(envToken));
+      console.log('✅ restored token from RC_BOT_TOKEN_JSON');
+      return;
+    }
+    if (fs.existsSync(tokenFile)) {
+      platform.auth().setData(JSON.parse(fs.readFileSync(tokenFile, 'utf8')));
+      console.log('✅ restored token from tokens.json');
+    } else {
+      console.log('ℹ️ no token found yet; install flow will populate one');
+    }
+  } catch (e) {
+    console.error('restoreAuthIfExists error', e);
   }
 }
 
 export async function saveToken(access_token: string) {
   const data = {
-    token_type: "bearer",
+    token_type: 'bearer',
     access_token,
-    expires_in: "999999999",
-    refresh_token: "",
-    refresh_token_expires_in: "0",
+    expires_in: '999999999',
+    refresh_token: '',
+    refresh_token_expires_in: '0',
   };
   await platform.auth().setData(data);
   fs.writeFileSync(tokenFile, JSON.stringify(data, null, 2));
-  console.log("✅ token saved");
+  console.log('✅ token saved');
 }
