@@ -312,9 +312,3 @@ curl -X POST https://swampbot.onrender.com/post-test   -H "Content-Type: applica
 - Never commit secrets (`.env`, `tokens.json`).
 - Share `tokens.json` via a secure vault if teammates need it.
 - In production, prefer `RC_BOT_TOKEN_JSON` (a secret env var) so restarts don’t require reinstall.
-
----
-
-## License
-
-MIT (or your preferred license)
