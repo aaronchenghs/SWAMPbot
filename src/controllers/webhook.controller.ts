@@ -26,6 +26,7 @@ function randomQuip(displayName?: string) {
 let cachedBotId = process.env.BOT_EXTENSION_ID || '';
 
 async function getBotExtensionId(): Promise<string> {
+  console.log('Fetching bot extension id');
   if (cachedBotId) return cachedBotId;
   try {
     const me = await platform
@@ -37,6 +38,7 @@ async function getBotExtensionId(): Promise<string> {
     console.warn('Could not fetch bot extension id:', e);
     cachedBotId = '';
   }
+  console.log(cachedBotId);
   return cachedBotId;
 }
 
@@ -121,6 +123,7 @@ webhookRouter.post('/', json(), async (req, res) => {
 
     // Determine if the bot was actually mentioned (or if it's a DM)
     const isDirect = chatType === 'Direct';
+    console.log('5');
     const myId = await getBotExtensionId();
     const mentionedBot =
       isDirect ||
