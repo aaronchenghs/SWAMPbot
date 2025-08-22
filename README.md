@@ -152,7 +152,7 @@ curl https://<your-tunnel>/chats
 curl -X POST https://<your-tunnel>/post-test   -H "Content-Type: application/json"   -d '{"chatId":"<CHAT_ID_FROM_/chats>"}'
 ```
 
-You should see “🤖 BangerBot is alive!” in that chat.
+You should see “🤖 SwampBot is alive!” in that chat.
 
 > If you don’t see it, make sure the **bot user is added to that chat** in RingCentral (chat → details → Add people → search bot name).
 
@@ -312,9 +312,3 @@ curl -X POST https://swampbot.onrender.com/post-test   -H "Content-Type: applica
 - Never commit secrets (`.env`, `tokens.json`).
 - Share `tokens.json` via a secure vault if teammates need it.
 - In production, prefer `RC_BOT_TOKEN_JSON` (a secret env var) so restarts don’t require reinstall.
-
----
-
-## License
-
-MIT (or your preferred license)
