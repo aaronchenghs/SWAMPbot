@@ -9,9 +9,6 @@ export const helloCommand: Command = {
   usage: 'hello',
   matches: (text) => GREETING_REGEX.test(text),
   async run(ctx) {
-    const you = `![:Person](${ctx.creatorId})`;
-    await ctx.reply(getRandomGreeting(you), {
-      mentions: [{ id: ctx.creatorId, type: 'Person' }],
-    });
+    await ctx.reply(getRandomGreeting(ctx.creatorName));
   },
 };
