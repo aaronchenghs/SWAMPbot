@@ -26,23 +26,28 @@ function randomQuip(displayName?: string) {
 
 webhookRouter.post('/', json(), async (req, res) => {
   console.log('Webhook event received');
-
+  console.log('1');
   const validation = req.get('Validation-Token');
+  console.log('2');
   if (validation) {
+    console.log('3');
     res.set('Validation-Token', validation);
     return res.status(200).end();
   }
-
+  console.log('4');
   const vt = req.get('Verification-Token');
+  console.log('5');
   if (process.env.VERIFICATION_TOKEN && vt !== process.env.VERIFICATION_TOKEN) {
+    console.log('6');
     console.warn('Webhook rejected: bad verification token');
     return res.status(401).end();
   }
-
+  console.log('7');
   res.status(200).end();
 
   try {
     const body: any = (req.body && (req.body.body || req.body)) || {};
+    console.log('8');
 
     const text: string = body?.text || body?.post?.text || '';
     const chatId: string = body?.groupId || body?.chatId || body?.post?.groupId;
@@ -50,14 +55,16 @@ webhookRouter.post('/', json(), async (req, res) => {
       body?.group?.type || body?.chat?.type || body?.post?.group?.type || '';
     const creatorName: string =
       body?.creator?.name || body?.post?.creator?.name || 'friend';
+    console.log('9', text, chatId);
 
     if (!text || !chatId) return;
-
+    console.log('10');
     const looksGreeting = /\b(hi|hello|hey|howdy)\b/i.test(text);
     const mentioned =
       chatType === 'Direct' || new RegExp(cfg.BOT_NAME, 'i').test(text);
 
     if (looksGreeting && mentioned) {
+      console.log('11');
       await postText(chatId, randomQuip(creatorName));
     }
   } catch (e) {
