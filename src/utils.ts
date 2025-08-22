@@ -10,6 +10,7 @@ export function getRandomGreeting(displayName?: string) {
     `sup ${name}. i heard you like bots so i put a bot in your chat 🤖`,
     `What's up ${name}! Do you know if we've restocked the coffee?. ☕`,
     `Hey ${name}, down for some foosball? ⚽`,
+    `Hey ${name}, think you could review my MR real quick? 🙏`,
   ];
   return quips[Math.floor(Math.random() * quips.length)];
 }
