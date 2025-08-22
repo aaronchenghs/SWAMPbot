@@ -11,6 +11,7 @@ async function postText(chatId: string, text: string) {
 
 // Little one-liner generator
 function randomQuip(displayName?: string) {
+  console.log('Generating quip for', displayName);
   const name = displayName || 'friend';
   const quips = [
     `Howdy, ${name}! I only bite stale JIRA tickets 🐊`,
