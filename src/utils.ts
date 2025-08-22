@@ -3,12 +3,13 @@ import { cfg } from './config';
 export function getRandomGreeting(displayName?: string) {
   const name = displayName || 'friend';
   const quips = [
-    `Howdy, ${name}! I only bite stale JIRA tickets 🐊`,
+    `Howdy, ${name}! How's your fantasy team doing? 🏈`,
     `oh hi ${name} 👋 — did someone say banger?`,
-    `Hello ${name}! Today's vibe check: ship > perfect.`,
-    `hey ${name} — if code compiles, it ships. that's the law.`,
+    `Hello ${name}! Today's vibe: commit directly to prod! 🚀`,
+    `hey ${name} — did you remember to run a build on that frontend? 😅`,
     `sup ${name}. i heard you like bots so i put a bot in your chat 🤖`,
-    `Greetings ${name}! I run on caffeine and optimistic typing.`,
+    `What's up ${name}! Do you know if we've restocked the coffee?. ☕`,
+    `Hey ${name}, down for some foosball? ⚽`,
   ];
   return quips[Math.floor(Math.random() * quips.length)];
 }
