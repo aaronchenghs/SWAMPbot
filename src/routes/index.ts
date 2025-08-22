@@ -1,10 +1,9 @@
-// src/routes/index.ts
 import { Router, json } from 'express';
 import { oauthRouter } from '../controllers/oauth.controller';
 import { webhookRouter } from '../controllers/webhook.controller';
 import { chatsRouter } from '../controllers/chats.controller';
 import { testRouter } from '../controllers/test.controller';
-import { platform } from '../services/ringcentral.service'; // 👈 add this
+import { platform } from '../services/ringcentral.service';
 
 export const routes = Router();
 

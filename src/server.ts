@@ -20,9 +20,7 @@ import { ensureSubscription } from './services/subscription.service';
 
   app.get('/subs', async (_req, res) => {
     try {
-      const r = await platform.get(
-        '/restapi/v1.0/account/~/extension/~/subscription',
-      );
+      const r = await platform.get('/restapi/v1.0/subscription');
       res.json(await r.json());
     } catch (e: any) {
       const body = e?.response ? await e.response.text() : e?.message;
