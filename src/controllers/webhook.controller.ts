@@ -1,15 +1,9 @@
 import { Router, json } from 'express';
-import { platform } from '../services/ringcentral.service';
-import { cfg } from '../config';
-import { BOT_ID, GREETING_REGEX } from '../constants';
+import { BOT_ID, GREETING_REGEX, MENTIONS_MARKUP_REGEX } from '../constants';
 import { getRandomGreeting } from '../utils';
+import { postText } from '../webhookUtils';
 
 export const webhookRouter = Router();
-
-async function postText(chatId: string, text: string) {
-  console.log('Posting text to chat', chatId, text);
-  await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, { text });
-}
 
 webhookRouter.post('/', json(), async (req, res) => {
   console.log('Webhook event received');
@@ -72,13 +66,8 @@ webhookRouter.post('/', json(), async (req, res) => {
     const creatorName: string = String(creator?.name || 'friend');
     const creatorId: string = String(creator?.id || '');
 
-    if (!groupId) {
-      console.warn('Webhook: no groupId found; skipping');
-      return;
-    }
-
     // Clean RC mention markup from text so greeting regex is reliable
-    const cleanText = rawText.replace(/!\[:[^\]]+\]\([^)]+\)/g, '').trim();
+    const cleanText = rawText.replace(MENTIONS_MARKUP_REGEX, '').trim();
 
     // Greeting detector
     const looksGreeting = GREETING_REGEX.test(cleanText);
@@ -94,9 +83,6 @@ webhookRouter.post('/', json(), async (req, res) => {
     const isDirect = chatType === 'Direct';
     const mentionedBot =
       isDirect || mentions.some((m: any) => String(m?.id) === BOT_ID) || false;
-
-    console.log(mentions);
-    console.log(BOT_ID);
 
     if (creatorId && creatorId === BOT_ID) return;
 
