@@ -9,7 +9,6 @@ async function postText(chatId: string, text: string) {
   await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, { text });
 }
 
-// Little one-liner generator
 function randomQuip(displayName?: string) {
   console.log('Generating quip for', displayName);
   const name = displayName || 'friend';
@@ -39,10 +38,9 @@ webhookRouter.post('/', json(), async (req, res) => {
     return res.status(401).end();
   }
 
-  res.status(200).end(); // ack fast
+  res.status(200).end();
 
   try {
-    // RingCentral TM events sometimes nest under body.body
     const body: any = (req.body && (req.body.body || req.body)) || {};
 
     const text: string = body?.text || body?.post?.text || '';

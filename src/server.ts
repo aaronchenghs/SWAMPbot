@@ -17,28 +17,4 @@ import { ensureSubscription } from './services/subscription.service';
       }, 500);
     }
   });
-
-  app.get('/subs', async (_req, res) => {
-    try {
-      const r = await platform.get('/restapi/v1.0/subscription');
-      res.json(await r.json());
-    } catch (e: any) {
-      const body = e?.response ? await e.response.text() : e?.message;
-      res.status(500).send(body || 'error');
-    }
-  });
-
-  app.get('/auth-debug', (_req, res) => {
-    try {
-      const d: any = platform.auth().data();
-      res.json({
-        hasAccessToken: Boolean(d?.access_token),
-        token_type: d?.token_type,
-        scope: d?.scope || '(none)',
-        expires_in: d?.expires_in,
-      });
-    } catch (e: any) {
-      res.status(500).send(e?.message || 'error');
-    }
-  });
 })();
