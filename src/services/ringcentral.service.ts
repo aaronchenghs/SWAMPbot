@@ -26,9 +26,9 @@ function normalizeAuth(raw: any) {
 
 export function restoreAuthIfExists() {
   try {
-    const fromEnv = process.env.RC_BOT_TOKEN_JSON;
-    if (fromEnv) {
-      platform.auth().setData(normalizeAuth(JSON.parse(fromEnv)));
+    const envJson = process.env.RC_BOT_TOKEN_JSON;
+    if (envJson) {
+      platform.auth().setData(normalizeAuth(JSON.parse(envJson)));
       console.log('✅ restored token from RC_BOT_TOKEN_JSON');
       return;
     }
