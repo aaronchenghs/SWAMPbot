@@ -6,6 +6,7 @@ export const webhookRouter = Router();
 
 // Minimal helper to post plain text
 async function postText(chatId: string, text: string) {
+  console.log('Posting text to chat', chatId, text);
   await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, { text });
 }
 
