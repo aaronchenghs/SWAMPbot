@@ -24,8 +24,8 @@ function randomQuip(displayName?: string) {
   return quips[Math.floor(Math.random() * quips.length)];
 }
 
-// Accept handshake + normal JSON events
 webhookRouter.post('/', json(), async (req, res) => {
+  console.log('Webhook event received');
   const v = req.get('Validation-Token');
   if (v) {
     res.set('Validation-Token', v);
