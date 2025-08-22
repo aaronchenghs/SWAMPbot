@@ -94,9 +94,15 @@ webhookRouter.post('/', json(), async (req, res) => {
     const isDirect = chatType === 'Direct';
     const mentionedBot =
       isDirect || mentions.some((m: any) => String(m?.id) === BOT_ID) || false;
+
+    console.log(
+      `Webhook: isDirect=${isDirect}, mentionedBot=${mentionedBot}, groupId=${groupId}`,
+    );
+
     if (creatorId && creatorId === BOT_ID) return;
 
     if (looksGreeting && mentionedBot) {
+      console.log('Trying to get the greeting for', creatorName);
       const msg = getRandomGreeting(creatorName);
       try {
         await postText(groupId, msg);
