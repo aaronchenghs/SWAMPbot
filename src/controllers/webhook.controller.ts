@@ -26,13 +26,20 @@ function randomQuip(displayName?: string) {
 
 webhookRouter.post('/', json(), async (req, res) => {
   console.log('Webhook event received');
-  const v = req.get('Validation-Token');
-  if (v) {
-    res.set('Validation-Token', v);
+
+  const validation = req.get('Validation-Token');
+  if (validation) {
+    res.set('Validation-Token', validation);
     return res.status(200).end();
   }
 
-  res.status(200).end();
+  const vt = req.get('Verification-Token');
+  if (process.env.VERIFICATION_TOKEN && vt !== process.env.VERIFICATION_TOKEN) {
+    console.warn('Webhook rejected: bad verification token');
+    return res.status(401).end();
+  }
+
+  res.status(200).end(); // ack fast
 
   try {
     // RingCentral TM events sometimes nest under body.body
