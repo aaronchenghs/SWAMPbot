@@ -1,9 +1,9 @@
-// src/controllers/webhook.controller.ts (only the “handle event” part changed)
 import { Router, json } from 'express';
 import { BOT_ID, MENTIONS_MARKUP_REGEX } from '../constants';
 import { postText } from '../webhookUtils';
 import { commands } from '../commands';
 import { CommandRouter } from '../commands/command-router';
+import { ChatType, RcId } from '../commands/types';
 
 export const webhookRouter = Router();
 const router = new CommandRouter(commands);
@@ -29,25 +29,25 @@ webhookRouter.post('/', json(), async (req, res) => {
     const rawText: string = String(
       evt?.text || evt?.post?.text || evt?.message?.text || '',
     );
-    const groupId: string = String(
+    const groupId: RcId =
       evt?.groupId ||
-        evt?.post?.groupId ||
-        evt?.message?.groupId ||
-        evt?.group?.id ||
-        evt?.chatId ||
-        '',
-    );
-    const chatType: string = String(
+      evt?.post?.groupId ||
+      evt?.message?.groupId ||
+      evt?.group?.id ||
+      evt?.chatId ||
+      '';
+
+    const chatType: ChatType =
       evt?.group?.type ||
-        evt?.post?.group?.type ||
-        evt?.chat?.type ||
-        evt?.groupType ||
-        '',
-    );
+      evt?.post?.group?.type ||
+      evt?.chat?.type ||
+      evt?.groupType ||
+      '';
+
     const creator =
       evt?.creator || evt?.post?.creator || evt?.message?.creator || {};
     const creatorName: string = String(creator?.name || 'friend');
-    const creatorId: string = String(creator?.id || '');
+    const creatorId: RcId = creator?.id || '';
 
     if (!groupId) return;
 
