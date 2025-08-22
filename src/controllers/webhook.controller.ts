@@ -1,45 +1,14 @@
 import { Router, json } from 'express';
 import { platform } from '../services/ringcentral.service';
 import { cfg } from '../config';
+import { BOT_ID } from '../constants';
+import { getRandomGreeting } from '../utils';
 
 export const webhookRouter = Router();
 
 async function postText(chatId: string, text: string) {
   console.log('Posting text to chat', chatId, text);
   await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, { text });
-}
-
-function randomQuip(displayName?: string) {
-  const name = displayName || 'friend';
-  const quips = [
-    `Howdy, ${name}! I only bite stale JIRA tickets 🐊`,
-    `oh hi ${name} 👋 — did someone say banger?`,
-    `Hello ${name}! Today's vibe check: ship > perfect.`,
-    `hey ${name} — if code compiles, it ships. that's the law.`,
-    `sup ${name}. i heard you like bots so i put a bot in your chat 🤖`,
-    `Greetings ${name}! I run on caffeine and optimistic typing.`,
-  ];
-  return quips[Math.floor(Math.random() * quips.length)];
-}
-
-// Cache the bot's extension id so we don't fetch it on every event
-let cachedBotId = process.env.BOT_EXTENSION_ID || '';
-
-async function getBotExtensionId(): Promise<string> {
-  console.log('Fetching bot extension id');
-  if (cachedBotId) return cachedBotId;
-  try {
-    const me = await platform
-      .get('/restapi/v1.0/account/~/extension/~')
-      .then((r) => r.json());
-    cachedBotId = String(me?.id || '');
-    process.env.BOT_EXTENSION_ID = cachedBotId;
-  } catch (e) {
-    console.warn('Could not fetch bot extension id:', e);
-    cachedBotId = '';
-  }
-  console.log(cachedBotId);
-  return cachedBotId;
 }
 
 webhookRouter.post('/', json(), async (req, res) => {
@@ -123,17 +92,12 @@ webhookRouter.post('/', json(), async (req, res) => {
 
     // Determine if the bot was actually mentioned (or if it's a DM)
     const isDirect = chatType === 'Direct';
-    console.log('5');
-    const myId = await getBotExtensionId();
     const mentionedBot =
-      isDirect ||
-      (myId && mentions.some((m: any) => String(m?.id) === myId)) ||
-      false;
-
-    if (creatorId && myId && creatorId === myId) return;
+      isDirect || mentions.some((m: any) => String(m?.id) === BOT_ID) || false;
+    if (creatorId && creatorId === BOT_ID) return;
 
     if (looksGreeting && mentionedBot) {
-      const msg = randomQuip(creatorName);
+      const msg = getRandomGreeting(creatorName);
       try {
         await postText(groupId, msg);
         console.log(`Webhook: replied in ${groupId}`);
