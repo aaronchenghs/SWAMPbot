@@ -16,22 +16,9 @@ routes.use(json());
 routes.use('/chats', chatsRouter);
 routes.use('/', testRouter);
 
-// 🔎 DEBUG (remove later or guard with env)
 routes.get('/whoami', async (_req, res) => {
   try {
     const r = await platform.get('/restapi/v1.0/account/~/extension/~');
-    res.json(await r.json());
-  } catch (e: any) {
-    const body = e?.response ? await e.response.text() : e?.message;
-    res.status(500).send(body || 'error');
-  }
-});
-
-routes.get('/chats-debug', async (_req, res) => {
-  try {
-    const r = await platform.get('/team-messaging/v1/chats', {
-      recordCount: '50',
-    });
     res.json(await r.json());
   } catch (e: any) {
     const body = e?.response ? await e.response.text() : e?.message;
