@@ -1,48 +1,31 @@
+// src/controllers/webhook.controller.ts (only the “handle event” part changed)
 import { Router, json } from 'express';
-import { BOT_ID, GREETING_REGEX, MENTIONS_MARKUP_REGEX } from '../constants';
-import { getRandomGreeting } from '../utils';
+import { BOT_ID, MENTIONS_MARKUP_REGEX } from '../constants';
 import { postText } from '../webhookUtils';
+import { commands } from '../commands';
+import { CommandRouter } from '../commands/command-router';
 
 export const webhookRouter = Router();
+const router = new CommandRouter(commands);
 
 webhookRouter.post('/', json(), async (req, res) => {
-  console.log('Webhook event received');
-
-  // Subscription API handshake (not used for console "Enable bot webhooks")
-  const validation = req.get('Validation-Token');
-  if (validation) {
-    res.set('Validation-Token', validation);
-    return res.status(200).end();
-  }
-
-  // Console "Enable bot webhooks" verification
-  const vt = req.get('Verification-Token');
-  if (process.env.VERIFICATION_TOKEN && vt !== process.env.VERIFICATION_TOKEN) {
-    console.warn('Webhook rejected: bad verification token');
-    return res.status(401).end();
-  }
-
   res.status(200).end();
 
   try {
-    // Normalize payload (some events nest under body.body)
     const evt: any = (req.body && (req.body.body || req.body)) || {};
     const event = String(req.body?.event || evt?.event || '');
     const eventType = String(
       evt?.eventType || evt?.body?.eventType || '',
     ).toLowerCase();
 
-    // Only react to new post/message events
     const isPostEvent =
       event.includes('/team-messaging/v1/posts') ||
       eventType === 'postadded' ||
       eventType === 'botmessageadded' ||
       !!evt?.post ||
       !!evt?.message;
-
     if (!isPostEvent) return;
 
-    // Extract common fields from multiple possible shapes
     const rawText: string = String(
       evt?.text || evt?.post?.text || evt?.message?.text || '',
     );
@@ -66,37 +49,36 @@ webhookRouter.post('/', json(), async (req, res) => {
     const creatorName: string = String(creator?.name || 'friend');
     const creatorId: string = String(creator?.id || '');
 
-    // Clean RC mention markup from text so greeting regex is reliable
-    const cleanText = rawText.replace(MENTIONS_MARKUP_REGEX, '').trim();
+    if (!groupId) return;
 
-    // Greeting detector
-    const looksGreeting = GREETING_REGEX.test(cleanText);
-
-    // Pull mentions array if present
+    // mention detection: array or markup
     const mentions =
       (Array.isArray(evt?.mentions) && evt.mentions) ||
       (Array.isArray(evt?.post?.mentions) && evt.post.mentions) ||
       (Array.isArray(evt?.message?.mentions) && evt.message.mentions) ||
       [];
-
-    // Determine if the bot was actually mentioned (or if it's a DM)
     const isDirect = chatType === 'Direct';
-    const mentionedBot =
-      isDirect || mentions.some((m: any) => String(m?.id) === BOT_ID) || false;
+    const mentioned =
+      isDirect ||
+      mentions.some((m: any) => String(m?.id) === String(BOT_ID)) ||
+      (/!\[:[^\]]+\]\((\d+)\)/g.test(rawText) &&
+        rawText.includes(`(${BOT_ID})`));
 
-    if (creatorId && creatorId === BOT_ID) return;
+    if (!mentioned) return;
+    if (creatorId && String(creatorId) === String(BOT_ID)) return; // don’t reply to ourselves
 
-    if (looksGreeting && mentionedBot) {
-      console.log('Trying to get the greeting for', creatorName);
-      const msg = getRandomGreeting(creatorName);
-      try {
-        await postText(groupId, msg);
-        console.log(`Webhook: replied in ${groupId}`);
-      } catch (postErr) {
-        console.error('Webhook: post failed:', postErr);
-      }
-    }
+    const cleanText = rawText.replace(MENTIONS_MARKUP_REGEX, '').trim();
+
+    await router.handle({
+      text: rawText,
+      cleanText,
+      chatId: groupId,
+      chatType,
+      creatorId,
+      creatorName,
+      reply: (text) => postText(groupId, text),
+    });
   } catch (e) {
-    console.error('webhook greeter error:', e);
+    console.error('webhook command error:', e);
   }
 });

@@ -2,6 +2,7 @@ import { SDK } from '@ringcentral/sdk';
 import fs from 'fs';
 import path from 'path';
 import { cfg } from '../config';
+import { normalizeAuth } from '../controllers/oauth.controller';
 
 const rcsdk = new SDK({
   server: cfg.RINGCENTRAL_SERVER_URL,
@@ -11,18 +12,6 @@ const rcsdk = new SDK({
 export const platform = rcsdk.platform();
 
 const tokenFile = path.join(process.cwd(), 'tokens.json');
-
-function normalizeAuth(raw: any) {
-  const TEN_YEARS = 315360000;
-  return {
-    token_type: 'bearer',
-    access_token: raw?.access_token || raw?.accessToken || '',
-    expires_in: String(raw?.expires_in ?? TEN_YEARS),
-    refresh_token: '',
-    refresh_token_expires_in: String(raw?.refresh_token_expires_in ?? 0),
-    scope: raw?.scope || raw?.scopes || '',
-  };
-}
 
 export function restoreAuthIfExists() {
   try {

@@ -7,14 +7,16 @@ export const oauthRouter = express.Router();
 const tokenFile = path.join(process.cwd(), 'tokens.json');
 
 // Normalize so the SDK never tries to refresh
-function normalizeAuth(raw: any) {
+export function normalizeAuth(raw: any) {
   const TEN_YEARS = 315360000;
   return {
     token_type: 'bearer',
     access_token: raw?.access_token || '',
     expires_in: String(raw?.expires_in ?? TEN_YEARS),
     refresh_token: '',
-    refresh_token_expires_in: String(raw?.refresh_token_expires_in ?? 0),
+    refresh_token_expires_in: String(
+      raw?.refresh_token_expires_in ?? TEN_YEARS,
+    ),
     scope: raw?.scope || '',
   };
 }
