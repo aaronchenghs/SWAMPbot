@@ -1,5 +1,5 @@
 import { GREETING_REGEX } from '../../constants';
-import { getRandomGreeting, mentionPerson } from '../../utils';
+import { getRandomGreeting } from '../../utils';
 import { Command } from '../types';
 
 export const helloCommand: Command = {
@@ -9,11 +9,9 @@ export const helloCommand: Command = {
   usage: 'hello',
   matches: (text) => GREETING_REGEX.test(text),
   async run(ctx) {
-    const display =
-      ctx.creatorName && ctx.creatorName !== 'friend'
-        ? ctx.creatorName
-        : mentionPerson(ctx.creatorId);
-
-    await ctx.reply(getRandomGreeting(display));
+    const you = `![:Person](${ctx.creatorId})`;
+    await ctx.reply(getRandomGreeting(you), {
+      mentions: [{ id: ctx.creatorId, type: 'Person' }],
+    });
   },
 };

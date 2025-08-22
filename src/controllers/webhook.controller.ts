@@ -76,7 +76,7 @@ webhookRouter.post('/', json(), async (req, res) => {
       chatType,
       creatorId,
       creatorName,
-      reply: (text) => postText(groupId, text),
+      reply: (text, opts) => postText(groupId, text as any, opts),
     });
   } catch (e) {
     console.error('webhook command error:', e);
