@@ -1,7 +1,7 @@
 import { Router, json } from 'express';
 import { platform } from '../services/ringcentral.service';
 import { cfg } from '../config';
-import { BOT_ID } from '../constants';
+import { BOT_ID, GREETING_REGEX } from '../constants';
 import { getRandomGreeting } from '../utils';
 
 export const webhookRouter = Router();
@@ -81,7 +81,7 @@ webhookRouter.post('/', json(), async (req, res) => {
     const cleanText = rawText.replace(/!\[:[^\]]+\]\([^)]+\)/g, '').trim();
 
     // Greeting detector
-    const looksGreeting = /\b(hi|hello|hey|howdy|yo|sup)\b/i.test(cleanText);
+    const looksGreeting = GREETING_REGEX.test(cleanText);
 
     // Pull mentions array if present
     const mentions =
@@ -95,9 +95,8 @@ webhookRouter.post('/', json(), async (req, res) => {
     const mentionedBot =
       isDirect || mentions.some((m: any) => String(m?.id) === BOT_ID) || false;
 
-    console.log(
-      `Webhook: isDirect=${isDirect}, mentionedBot=${mentionedBot}, groupId=${groupId}`,
-    );
+    console.log(mentions);
+    console.log(BOT_ID);
 
     if (creatorId && creatorId === BOT_ID) return;
 

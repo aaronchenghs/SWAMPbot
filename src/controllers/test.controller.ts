@@ -19,7 +19,7 @@ testRouter.post('/post-test', async (req, res) => {
       {
         type: 'TextBlock',
         isSubtle: true,
-        text: 'Monthly awards coming soon.',
+        text: 'ARA`s SWAMPBot is here to help you with your work day.',
       },
     ],
   };

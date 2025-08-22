@@ -1,3 +1,5 @@
+import { cfg } from './config';
+
 export function getRandomGreeting(displayName?: string) {
   const name = displayName || 'friend';
   const quips = [
@@ -9,4 +11,9 @@ export function getRandomGreeting(displayName?: string) {
     `Greetings ${name}! I run on caffeine and optimistic typing.`,
   ];
   return quips[Math.floor(Math.random() * quips.length)];
+}
+
+export function mentionsBot(text: string) {
+  if (!cfg.BOT_NAME) return true;
+  return new RegExp(cfg.BOT_NAME, 'i').test(text || '');
 }
