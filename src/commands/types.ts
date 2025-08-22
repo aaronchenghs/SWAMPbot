@@ -1,19 +1,25 @@
-export interface CommandContext {
+export type RcId = `${number}`;
+export type ChatType = 'Team' | 'Direct' | 'Everyone' | 'Personal';
+export type CommandName = `${Lowercase<string>}`;
+export type ReplyFn = (text: string) => Promise<void>;
+export type CommandContext = Readonly<{
   text: string;
   cleanText: string;
-  args: string[];
-  chatId: string;
-  chatType: string;
-  creatorId: string;
+  args: ReadonlyArray<string>;
+  chatId: RcId;
+  chatType: ChatType;
+  creatorId: RcId;
   creatorName: string;
-  reply: (text: string) => Promise<void>;
-}
+  reply: ReplyFn;
+}>;
 
-export interface Command {
-  name: string;
-  aliases?: string[];
+export type CommandMatcher = (text: string, ctx: CommandContext) => boolean;
+
+export type Command = Readonly<{
+  name: CommandName;
+  aliases?: ReadonlyArray<CommandName>;
   description?: string;
   usage?: string;
-  matches?: (text: string, ctx: CommandContext) => boolean;
-  run: (ctx: CommandContext) => Promise<void> | void;
-}
+  matches?: CommandMatcher;
+  run: (ctx: CommandContext) => void | Promise<void>;
+}>;

@@ -5,18 +5,14 @@ export function createHelpCommand(listCommands: () => Command[]): Command {
     name: 'help',
     aliases: ['h', '?'],
     description: 'Show available commands',
-    usage: '!help',
+    usage: 'help',
     async run(ctx) {
       const cmds = listCommands();
       const lines = cmds.map((c) => {
         const names = [c.name, ...(c.aliases || [])].join(', ');
-        return `• **${names}** — ${c.description || ''}${c.usage ? `  \n   _Usage:_ \`${c.usage}\`` : ''}`;
+        return `• **${names}** — ${c.description || ''}${c.usage ? `  \n   Usage: \`${c.usage}\`` : ''}`;
       });
-      await ctx.reply(
-        `**SWAMPbot commands**\n` +
-          `(prefix: \`${process.env.COMMAND_PREFIX || '!'}\` — mention not required)\n\n` +
-          lines.join('\n'),
-      );
+      await ctx.reply(`**SWAMPbot commands**\n` + lines.join('\n'));
     },
   };
 }
