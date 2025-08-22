@@ -27,4 +27,18 @@ import { ensureSubscription } from './services/subscription.service';
       res.status(500).send(body || 'error');
     }
   });
+
+  app.get('/auth-debug', (_req, res) => {
+    try {
+      const d: any = platform.auth().data?.();
+      res.json({
+        hasAccessToken: !!d?.access_token,
+        scope: d?.scope || '(none)',
+        expires_in: d?.expires_in,
+        token_type: d?.token_type,
+      });
+    } catch (e: any) {
+      res.status(500).send(e?.message || 'error');
+    }
+  });
 })();
