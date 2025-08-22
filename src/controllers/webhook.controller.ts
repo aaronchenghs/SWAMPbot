@@ -37,7 +37,6 @@ async function getBotId(): Promise<string> {
   return botIdCache;
 }
 
-// Parse RC mention markup: ! -> ["1147831045", ...]
 function extractMentionIdsFromText(text: string): string[] {
   const ids: string[] = [];
   const re = /!\[:[^\]]+\]\((\d+)\)/g;
