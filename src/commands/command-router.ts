@@ -11,10 +11,6 @@ export class CommandRouter {
 
   /**
    * Parse the first token as a command.
-   * Supports:
-   *  - "!ping foo bar"
-   *  - "ping foo bar"
-   *  - "hello there" (if a command provides .matches() to catch it)
    */
   private parse(cleanText: string): { cmdName: string; args: string[] } {
     const trimmed = cleanText.trim();
