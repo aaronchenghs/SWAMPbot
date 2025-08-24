@@ -105,7 +105,8 @@ export async function answerFromHistoryDirect(
     ...({ max_completion_tokens: 140 } as any),
     stream: false,
   });
-  console.table(response);
+  console.log(response);
+  console.log(response.choices);
   const json = extractJson(getContent(response)) || {};
   // Simple fallback for “who … ?” shape if model returns nothing
   if (
