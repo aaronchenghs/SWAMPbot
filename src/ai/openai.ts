@@ -36,20 +36,20 @@ export async function embed(text: string): Promise<number[]> {
 /** Fast: “is this a question?” → { isQuestion, reason } */
 export async function classifyQuestion(text: string) {
   const resp = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
-    temperature: 0,
+    model: 'gpt-4o-mini',
     messages: [
       {
         role: 'system',
         content:
           'You are a classifier. Output STRICT JSON only with keys: ' +
-          `{"is_question": boolean, "reason": string}. No prose.`,
+          `{"is_question": true|false, "reason": string}. No prose.`,
       },
       {
         role: 'user',
         content: `Text:\n${text.slice(0, 1500)}`,
       },
     ],
+    max_tokens: 150,
   });
 
   const json = extractJson(getContent(resp));

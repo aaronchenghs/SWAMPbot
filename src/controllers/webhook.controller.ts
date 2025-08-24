@@ -1,6 +1,6 @@
 import { Router, json } from 'express';
 import { cfg } from '../config';
-import { BOT_ID, GREETING_REGEX, MENTIONS_MARKUP_REGEX } from '../constants';
+import { BOT_ID, MENTIONS_MARKUP_REGEX } from '../constants';
 import {
   extractCommandText,
   findCommand,
@@ -122,12 +122,6 @@ webhookRouter.post('/', json(), async (req, res) => {
       new RegExp(`\\b${cfg.BOT_NAME}\\b`, 'i').test(cleanText);
 
     if (!mentionedBot) return;
-
-    // Greeting one-liners still work
-    if (GREETING_REGEX.test(cleanText)) {
-      await postText(groupId as any, `Hey ${creatorName}!`);
-      // continue to commands too (maybe they said "hello help")
-    }
 
     // Command extraction
     const cmdText = extractCommandText(cleanText);
