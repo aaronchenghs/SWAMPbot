@@ -60,6 +60,7 @@ export async function maybeAutoReply(
     .slice(0, TOPK)
     .filter((x) => x.sim >= MIN_SIM);
 
+  console.log('scored:', scored);
   if (!scored.length) return;
 
   // 4) Build small evidence set: each hit + a couple replies (possible answers)
@@ -81,8 +82,11 @@ export async function maybeAutoReply(
     }
   }
 
+  console.log('evidence:', evidence);
+
   // 5) Ask LLM to decide + draft reply
   const draft = await draftAnswer(text, evidence);
+  console.log('draft:', draft);
   if (draft.duplicate && draft.confidence >= MIN_CONF && draft.reply)
     await post(
       `I think we covered this recently. Here's the recap:\n\n${draft.reply}\n\n(auto-reply; say “@swampbot ignore” to disable in this chat)`,
