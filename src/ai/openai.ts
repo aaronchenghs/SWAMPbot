@@ -38,7 +38,7 @@ export async function classifyQuestion(text: string) {
     ],
     ...({ max_completion_tokens: 150 } as any),
   });
-
+  console.log('Content:', getContent(response));
   const json = extractJson(getContent(response));
   console.log('Classify result:', json);
   return {
