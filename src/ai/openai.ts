@@ -40,6 +40,7 @@ export async function classifyQuestion(text: string) {
   });
 
   const json = extractJson(getContent(response));
+  console.log('Classify result:', json);
   return {
     isQuestion: !!json.is_question,
     reason: String(json.reason || ''),

@@ -34,11 +34,13 @@ export async function maybeAutoReply(
 
   // 2) LLM classifier (cheap)
   const cls = await classifyQuestion(text);
+  console.log('Classified as question?', cls.isQuestion);
   if (!cls.isQuestion) return;
 
   // 3) Semantic search in recent window
   const since = Date.now() - LOOKBACK_DAYS * 24 * 3600 * 1000;
   const recents = recentInChat(newMsg.chatId, since);
+  console.log(`Found ${recents.length} recent messages to compare.`);
   if (!recents.length) return;
 
   // Helper type + guard so TS keeps the element type after filtering nulls

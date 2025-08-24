@@ -90,7 +90,6 @@ webhookRouter.post('/', json(), async (req, res) => {
 
     // --- 1) Index every user message + try auto-answer on likely questions ---
     if (cleanText) {
-      console.log(cleanText);
       await indexIncoming({
         id,
         chatId: groupId,
