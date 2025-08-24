@@ -1,13 +1,17 @@
-// src/autoanswer/engine.ts
-import { classifyQuestion, answerFromHistoryDirect } from '../ai/openai';
-import { recentInChat, type MsgRow } from '../store/history';
+import { classifyQuestion, answerFromHistoryDirect, embed } from '../ai/openai';
+import { QUESTION_REGEX } from '../constants';
+import { addMessage, recentInChat, type MsgRow } from '../store/history';
 
 const LOOKBACK_DAYS = Number(process.env.DEDUP_LOOKBACK_DAYS || '7');
 const MIN_CONF = Number(process.env.DEDUP_MIN_CONFIDENCE || '0.65');
 
 export async function indexIncoming(m: MsgRow) {
-  // keep your existing “store to DB” path; embeddings optional
-  // if you still want vectors for other features, leave as-is elsewhere
+  if ((m.text || '').trim().length >= 8) {
+    const v = await embed(m.text);
+    addMessage(m, v);
+  } else {
+    addMessage(m, new Array(1536).fill(0));
+  }
 }
 
 export async function maybeAutoReply(
@@ -18,10 +22,7 @@ export async function maybeAutoReply(
   if (!text) return;
 
   // Light gate to save tokens
-  const looksLikeQuestion =
-    /[?]|^\s*(who|what|why|where|when|how|can|should|do|does|did|is|are)\b/i.test(
-      text,
-    );
+  const looksLikeQuestion = QUESTION_REGEX.test(text);
   if (!looksLikeQuestion) return;
 
   // Cheap classifier (optional but helps reduce calls)

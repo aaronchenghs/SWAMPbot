@@ -30,7 +30,6 @@ function buildList(
     .join('\n');
 }
 
-/* -------------------------------- embeddings -------------------------------- */
 export async function embed(text: string): Promise<number[]> {
   const r = await openai.embeddings.create({
     model: 'text-embedding-3-small',
@@ -39,11 +38,10 @@ export async function embed(text: string): Promise<number[]> {
   return r.data[0].embedding;
 }
 
-/* --------------------------- question classification -------------------------- */
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
   const r = await openai.chat.completions.create({
-    model: OPENAI_MODEL, // e.g. "gpt-5-nano-2025-08-07"
+    model: OPENAI_MODEL,
     messages: [
       {
         role: 'system',
@@ -78,8 +76,8 @@ export async function answerFromHistoryDirect(
   history: Array<{ author: string; when: string; text: string }>,
 ) {
   const list = buildList(history, 16);
-
-  const r = await openai.chat.completions.create({
+  console.log('Getting an answer from chatGPT...');
+  const response = await openai.chat.completions.create({
     model: OPENAI_MODEL,
     messages: [
       {
@@ -107,8 +105,8 @@ export async function answerFromHistoryDirect(
     ...({ max_completion_tokens: 140 } as any),
     stream: false,
   });
-
-  const json = extractJson(getContent(r)) || {};
+  console.table(response);
+  const json = extractJson(getContent(response)) || {};
   // Simple fallback for “who … ?” shape if model returns nothing
   if (
     (!json || typeof json.duplicate === 'undefined') &&
