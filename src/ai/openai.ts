@@ -36,7 +36,7 @@ export async function embed(text: string): Promise<number[]> {
 /** Fast: “is this a question?” → { isQuestion, reason } */
 export async function classifyQuestion(text: string) {
   const resp = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: OPENAI_MODEL,
     messages: [
       {
         role: 'system',
