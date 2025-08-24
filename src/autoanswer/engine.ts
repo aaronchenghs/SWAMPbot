@@ -34,13 +34,11 @@ export async function maybeAutoReply(
 
   // 2) LLM classifier (cheap)
   const cls = await classifyQuestion(text);
-  console.log('Classified as question?', cls.isQuestion);
   if (!cls.isQuestion) return;
 
   // 3) Semantic search in recent window
   const since = Date.now() - LOOKBACK_DAYS * 24 * 3600 * 1000;
   const recents = recentInChat(newMsg.chatId, since);
-  console.log(`Found ${recents.length} recent messages to compare.`);
   if (!recents.length) return;
 
   // Helper type + guard so TS keeps the element type after filtering nulls
@@ -60,7 +58,6 @@ export async function maybeAutoReply(
     .slice(0, TOPK)
     .filter((x) => x.sim >= MIN_SIM);
 
-  console.log('scored:', scored);
   if (!scored.length) return;
 
   // 4) Build small evidence set: each hit + a couple replies (possible answers)
@@ -82,9 +79,9 @@ export async function maybeAutoReply(
     }
   }
 
-  console.log('evidence:', evidence);
-
   // 5) Ask LLM to decide + draft reply
+  console.log('evidence:', evidence);
+  console.log('scored:', scored);
   const draft = await draftAnswer(text, evidence);
   console.log('draft:', draft);
   if (draft.duplicate && draft.confidence >= MIN_CONF && draft.reply)
