@@ -12,39 +12,27 @@ import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
 
 export const webhookRouter = Router();
 
-webhookRouter.post('/', json(), async (req, res) => {
-  // Subscription API handshake (not used if you set webhooks in console)
-  const validation = req.get('Validation-Token');
-  if (validation) {
-    res.set('Validation-Token', validation);
-    return res.status(200).end();
+/* -------------------------------------------------------------------------- */
+/* De-dupe: avoid replying twice to the same post ID                          */
+/* -------------------------------------------------------------------------- */
+const SEEN = new Map<string, number>();
+const SEEN_TTL_MS = 60_000; // keep seen IDs for 60s
+
+function seenRecently(id: string): boolean {
+  const now = Date.now();
+  // cleanup old
+  for (const [k, ts] of SEEN) {
+    if (now - ts > SEEN_TTL_MS) SEEN.delete(k);
   }
+  if (!id) return false;
+  if (SEEN.has(id)) return true;
+  SEEN.set(id, now);
+  return false;
+}
 
-  // Console “Enable bot webhooks” verification
-  const vt = req.get('Verification-Token');
-  if (process.env.VERIFICATION_TOKEN && vt !== process.env.VERIFICATION_TOKEN) {
-    console.warn('Webhook rejected: bad verification token');
-    return res.status(401).end();
-  }
-
-  res.status(200).end();
-
-  try {
-    const body: AnyRecord = (req.body && (req.body.body || req.body)) || {};
-    if (!isTeamMessagingPostEvent(body)) return;
-    const post = normalizePost(body);
-    if (post.creatorId === BOT_ID) return; // ignore bot's own messages
-
-    await indexMessage(post);
-    if (wasBotMentioned(post)) {
-      await handleCommands(post);
-      return;
-    }
-    await tryAutoAnswer(post);
-  } catch (e) {
-    console.error('webhook controller error:', e);
-  }
-});
+/* -------------------------------------------------------------------------- */
+/* Types & helpers                                                            */
+/* -------------------------------------------------------------------------- */
 
 type AnyRecord = Record<string, any>;
 
@@ -66,15 +54,14 @@ function isTeamMessagingPostEvent(body: AnyRecord): boolean {
   const eventType = String(
     body?.eventType || body?.body?.eventType || '',
   ).toLowerCase();
+  const hasPostNode = !!body?.post || !!body?.message;
+  const hasPostPath = envelopeEvent.includes('/team-messaging/v1/posts');
 
-  return (
-    envelopeEvent.includes('/team-messaging/v1/posts') ||
-    eventType === 'postadded' ||
-    eventType === 'postchanged' ||
-    eventType === 'botmessageadded' ||
-    !!body?.post ||
-    !!body?.message
-  );
+  // If RingCentral tells us the event type, only process postadded
+  if (eventType) return eventType === 'postadded';
+
+  // Otherwise fall back to presence of a post node/path
+  return hasPostNode || hasPostPath;
 }
 
 function pickPostNode(body: AnyRecord): AnyRecord {
@@ -144,7 +131,7 @@ function wasBotMentioned(n: NormalizedPost): boolean {
   return mentionedById || nameMention;
 }
 
-/** Index the message into your history store (embeddings & text) */
+/** Index into history store */
 async function indexMessage(n: NormalizedPost) {
   if (!n.cleanText) return;
   await indexIncoming({
@@ -158,10 +145,10 @@ async function indexMessage(n: NormalizedPost) {
   });
 }
 
-/** Auto-answer (only in non-DM + not mentioned branch) */
+/** Auto-answer (non-DM & not mentioned) */
 async function tryAutoAnswer(n: NormalizedPost) {
   if (!n.cleanText) return;
-  if (n.chatType === 'Direct') return; // never auto-answer in DMs
+  if (n.chatType === 'Direct') return;
   await maybeAutoReply(
     {
       id: n.id,
@@ -178,7 +165,6 @@ async function tryAutoAnswer(n: NormalizedPost) {
 
 /** Handle the “mentioned/DM → commands only” branch */
 async function handleCommands(n: NormalizedPost) {
-  // Strip mention text and split into args
   const cmdText = extractCommandText(n.cleanText);
   const args = cmdText.split(/\s+/).filter(Boolean);
 
@@ -217,3 +203,53 @@ async function handleCommands(n: NormalizedPost) {
     );
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* Route                                                                       */
+/* -------------------------------------------------------------------------- */
+
+webhookRouter.post('/', json(), async (req, res) => {
+  // Subscription API handshake (not used when using Console "Enable bot webhooks")
+  const validation = req.get('Validation-Token');
+  if (validation) {
+    res.set('Validation-Token', validation);
+    return res.status(200).end();
+  }
+
+  // Console verification
+  const vt = req.get('Verification-Token');
+  if (process.env.VERIFICATION_TOKEN && vt !== process.env.VERIFICATION_TOKEN) {
+    console.warn('Webhook rejected: bad verification token');
+    return res.status(401).end();
+  }
+
+  // Ack early so RC doesn't retry
+  res.status(200).end();
+
+  try {
+    const body: AnyRecord = (req.body && (req.body.body || req.body)) || {};
+    if (!isTeamMessagingPostEvent(body)) return;
+
+    const post = normalizePost(body);
+
+    // Prevent double-processing: sometimes RC sends more than one event per message
+    if (seenRecently(post.id)) return;
+
+    // Ignore our own messages
+    if (post.creatorId === BOT_ID) return;
+
+    // Always index first
+    await indexMessage(post);
+
+    if (wasBotMentioned(post)) {
+      // Mentioned or DM → commands only (no auto-answer)
+      await handleCommands(post);
+      return; // IMPORTANT
+    }
+
+    // Not mentioned → auto-answer only
+    await tryAutoAnswer(post);
+  } catch (e) {
+    console.error('webhook controller error:', e);
+  }
+});

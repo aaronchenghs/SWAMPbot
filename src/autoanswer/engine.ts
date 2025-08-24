@@ -80,12 +80,9 @@ export async function maybeAutoReply(
   }
 
   // 5) Ask LLM to decide + draft reply
-  console.log('evidence:', evidence);
-  console.log('scored:', scored);
   const draft = await draftAnswer(text, evidence);
-  console.log('draft:', draft);
   if (draft.duplicate && draft.confidence >= MIN_CONF && draft.reply)
     await post(
-      `I think we covered this recently. Here's the recap:\n\n${draft.reply}\n\n(auto-reply; say “@swampbot ignore” to disable in this chat)`,
+      `I think we covered this recently. Here's the recap:\n\n${draft.reply}\n`,
     );
 }

@@ -1,23 +1,13 @@
-// src/ai/openai.ts
 import OpenAI from 'openai';
 import { OPENAI_MODEL } from '../constants';
 import { extractJson, heuristicIsQuestion } from '../utils';
 
 export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-/* --------------------------------- helpers --------------------------------- */
-
-const IS_NANO = /^gpt-5-nano/i.test(OPENAI_MODEL);
-
-type ChatChoice = OpenAI.Chat.Completions.ChatCompletion['choices'][number];
-
 function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
-  // Helpful debug if the model returns nothing
   if (!r?.choices?.length) return '';
   const c = r.choices[0];
   if (!c?.message?.content) {
-    // Uncomment if you need verbose logs:
-    // console.log('Debug (empty content):', JSON.stringify(r, null, 2));
   }
   return c?.message?.content ?? '';
 }
