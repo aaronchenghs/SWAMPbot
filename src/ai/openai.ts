@@ -21,6 +21,7 @@ export async function embed(text: string): Promise<number[]> {
 
 /** Fast: “is this a question?” → { isQuestion, reason } */
 export async function classifyQuestion(text: string) {
+  console.log('Classifying question:', text.slice(0, 100));
   const response = await openai.chat.completions.create({
     model: OPENAI_MODEL,
     messages: [
