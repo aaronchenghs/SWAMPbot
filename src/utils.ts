@@ -1,5 +1,6 @@
 import { RcId } from './commands/types';
 import { cfg } from './config';
+import { QUESTION_REGEX } from './constants';
 
 export function getRandomGreeting(displayName?: string) {
   const name = displayName || 'friend';
@@ -39,4 +40,18 @@ export function extractJson(text: string): any {
     } catch {}
   }
   return {};
+}
+
+export function heuristicIsQuestion(t: string): boolean {
+  return /[?]/.test(t) || QUESTION_REGEX.test(t);
+}
+
+export function parseToolCallJSON(choice: any): any {
+  const tc = choice?.message?.tool_calls?.[0];
+  if (tc?.function?.arguments) {
+    try {
+      return JSON.parse(tc.function.arguments);
+    } catch {}
+  }
+  return null;
 }
