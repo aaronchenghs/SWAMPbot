@@ -26,7 +26,7 @@ export function helpMessage() {
     const usage = c.usage ? ` — \`${c.usage}\`` : '';
     return `• **${names}** — ${desc}${usage}`;
   });
-  return `Here’s what I can do:\n\n${lines.join('\n')}\n\nTip: mention me, then your command. (e.g., “@${cfg.BOT_NAME} banger”)`;
+  return `Here’s what I can do:\n\n${lines.join('\n')}\n\nTip: mention me, then your command.`;
 }
 
 /** Extract a command text from cleaned content, removing the bot name when present */
