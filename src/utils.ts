@@ -26,3 +26,17 @@ export function mentionsBot(text: string) {
 
 export const mentionPerson = (id: RcId) => `![:Person](${id})`;
 export const mentionTeam = (id: RcId) => `![:Team](${id})`;
+
+export function extractJson(text: string): any {
+  try {
+    return JSON.parse(text);
+  } catch {}
+  const a = text.indexOf('{'),
+    b = text.lastIndexOf('}');
+  if (a !== -1 && b !== -1 && b > a) {
+    try {
+      return JSON.parse(text.slice(a, b + 1));
+    } catch {}
+  }
+  return {};
+}

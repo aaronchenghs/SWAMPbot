@@ -1,25 +1,11 @@
 import OpenAI from 'openai';
 import { OPENAI_MODEL } from '../constants';
+import { extractJson } from '../utils';
 
 export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-function extractJson(text: string): any {
-  // Try direct parse first
-  try {
-    return JSON.parse(text);
-  } catch {}
-
-  // If the model wrapped JSON in code fences or extra prose, pull the largest {...} block.
-  const first = text.indexOf('{');
-  const last = text.lastIndexOf('}');
-  if (first !== -1 && last !== -1 && last > first) {
-    const candidate = text.slice(first, last + 1);
-    try {
-      return JSON.parse(candidate);
-    } catch {}
-  }
-  return {};
-}
+const firstContent = (r: OpenAI.Chat.Completions.ChatCompletion) =>
+  r.choices?.[0]?.message?.content ?? '';
 
 function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
   return r.choices?.[0]?.message?.content ?? '';
@@ -35,7 +21,7 @@ export async function embed(text: string): Promise<number[]> {
 
 /** Fast: “is this a question?” → { isQuestion, reason } */
 export async function classifyQuestion(text: string) {
-  const resp = await openai.chat.completions.create({
+  const response = await openai.chat.completions.create({
     model: OPENAI_MODEL,
     messages: [
       {
@@ -49,10 +35,10 @@ export async function classifyQuestion(text: string) {
         content: `Text:\n${text.slice(0, 1500)}`,
       },
     ],
-    max_tokens: 150,
+    ...({ max_completion_tokens: 150 } as any),
   });
 
-  const json = extractJson(getContent(resp));
+  const json = extractJson(getContent(response));
   return {
     isQuestion: !!json.is_question,
     reason: String(json.reason || ''),
@@ -70,15 +56,13 @@ export async function draftAnswer(
 
   const resp = await openai.chat.completions.create({
     model: OPENAI_MODEL,
-    temperature: 0.2,
     messages: [
       {
         role: 'system',
         content:
-          'You summarize internal chat history to prevent duplicate Q&A. ' +
-          'Return STRICT JSON only with keys: ' +
-          `{"duplicate": boolean, "confidence": number, "reply": string}. ` +
-          'confidence is 0..1. "reply" is 1–4 concise sentences with short quotes + dates + author attribution.',
+          'Summarize prior chat to avoid duplicate Q&A. Return STRICT JSON only: ' +
+          '{"duplicate": true|false, "confidence": number, "reply": string}. ' +
+          'confidence is 0..1. "reply" = 1–4 concise sentences with short quotes + dates + author.',
       },
       {
         role: 'user',
@@ -87,9 +71,11 @@ export async function draftAnswer(
           `RELATED HISTORY (most relevant first):\n${related}`,
       },
     ],
+    ...({ max_completion_tokens: 220 } as any),
+    stream: false,
   });
 
-  const json = extractJson(getContent(resp));
+  const json = extractJson(firstContent(resp));
   return {
     duplicate: !!json.duplicate,
     confidence: Number(json.confidence ?? 0),
