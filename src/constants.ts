@@ -1,5 +1,5 @@
 export const BOT_ID = '4865606044';
-export const OPENAI_MODEL = 'gpt-5-nano';
+export const OPENAI_MODEL = 'gpt-5';
 export const GREETING_REGEX = /\b(hi|hello|hey|howdy|yo|sup)\b/i;
 export const MENTIONS_MARKUP_REGEX = /!\[:[^\]]+\]\([^)]+\)/g;
 export const QUESTION_REGEX =
