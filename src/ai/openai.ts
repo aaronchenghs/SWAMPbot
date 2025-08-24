@@ -1,3 +1,4 @@
+// src/ai/openai.ts
 import OpenAI from 'openai';
 import { OPENAI_MODEL } from '../constants';
 import { extractJson, heuristicIsQuestion } from '../utils';
@@ -5,7 +6,6 @@ import { extractJson, heuristicIsQuestion } from '../utils';
 export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 /* ----------------------------- tool-call helpers ---------------------------- */
-
 type Choice = OpenAI.Chat.Completions.ChatCompletion['choices'][number];
 type ToolCall = OpenAI.Chat.Completions.ChatCompletionMessageToolCall;
 type FnToolCall = Extract<ToolCall, { type: 'function' }>;
@@ -13,7 +13,6 @@ type FnToolCall = Extract<ToolCall, { type: 'function' }>;
 function isFnToolCall(tc: ToolCall | undefined): tc is FnToolCall {
   return !!tc && tc.type === 'function' && 'function' in tc;
 }
-
 function parseFirstToolCallJSON(choice?: Choice): any | null {
   const calls = choice?.message?.tool_calls;
   if (!Array.isArray(calls)) return null;
@@ -28,14 +27,7 @@ function parseFirstToolCallJSON(choice?: Choice): any | null {
   }
 }
 
-/* -------------------------------- utilities -------------------------------- */
-
-function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
-  return r.choices?.[0]?.message?.content ?? '';
-}
-
 /* -------------------------------- embeddings -------------------------------- */
-
 export async function embed(text: string): Promise<number[]> {
   const r = await openai.embeddings.create({
     model: 'text-embedding-3-small',
@@ -48,17 +40,16 @@ export async function embed(text: string): Promise<number[]> {
 /** Fast: “is this a question?” → { isQuestion, reason } */
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
-  console.log('Classifying question:', text.slice(0, 100));
-
   const resp = await openai.chat.completions.create({
     model: OPENAI_MODEL, // "gpt-5-nano"
     messages: [
       {
         role: 'system',
         content:
-          'Decide if the user text is a question or implies a question that needs an answer.',
+          'Classify if the user text asks a question (or clearly implies one). ' +
+          'Return ONLY via tool call. Keep reason under 15 words.',
       },
-      { role: 'user', content: text.slice(0, 1500) },
+      { role: 'user', content: text.slice(0, 800) },
     ],
     tools: [
       {
@@ -79,26 +70,23 @@ export async function classifyQuestion(text: string) {
       },
     ],
     tool_choice: { type: 'function', function: { name: 'set_result' } },
-    ...({ max_completion_tokens: 120 } as any),
+    ...({ max_completion_tokens: 48 } as any), // tiny cap so it can’t wander
     stream: false,
   });
 
-  // Prefer structured tool JSON
   const choice = resp.choices?.[0];
   const toolJson = parseFirstToolCallJSON(choice);
   if (toolJson) {
-    console.log('Classify (tool):', toolJson);
     return {
       isQuestion: !!toolJson.is_question,
       reason: String(toolJson.reason || ''),
     };
   }
 
-  // Fallback to content-based JSON, then heuristic
+  // very rare fallback
   const content = choice?.message?.content ?? '';
   if (content) {
     const json = extractJson(content);
-    console.log('Classify (content):', json);
     if (json && typeof json.is_question !== 'undefined') {
       return {
         isQuestion: !!json.is_question,
@@ -106,13 +94,15 @@ export async function classifyQuestion(text: string) {
       };
     }
   }
-
-  console.warn('Classify: no JSON returned; using heuristic.');
   return { isQuestion: fallback, reason: 'heuristic fallback' };
 }
 
 /* ----------------------- duplicate detection / drafting ---------------------- */
-/** Summarize related history into a short auto-reply */
+/**
+ * Given the new message and related history, decide if it’s a duplicate and
+ * draft a 1–3 sentence recap with citation(s). We push a strict rubric and examples
+ * so obvious re-asks (“is the new car green?” + “yes it is”) are marked duplicate.
+ */
 export async function draftAnswer(
   newMsg: string,
   hits: Array<{ author: string; when: string; text: string }>,
@@ -121,33 +111,51 @@ export async function draftAnswer(
     .map((h, i) => `[${i + 1}] ${h.when} — ${h.author}: ${h.text}`)
     .join('\n');
 
-  const example = `
-EXAMPLE
+  const examples = `
+RUBRIC:
+- If any related message directly answers the question (e.g., "yes/no", or a definitive statement resolving it),
+  set duplicate=true with confidence >= 0.75.
+- Tolerate typos or minor wording differences ("teh" vs "the").
+- Prefer the most direct, recent answer; include [index] citation(s), author, and date/time.
+- Keep reply to 1–3 short sentences.
+- If there is no clear answer, set duplicate=false.
+
+EXAMPLE A
 NEW MESSAGE:
 "is the new car green?"
-
-RELATED HISTORY:
-[1] 2025-08-24 22:11 — Alice: is the new car green?
+RELATED:
+[1] 2025-08-24 22:11 — Alice: is teh new car green?
 [2] 2025-08-24 22:12 — Bob: yes, the new car is green
-
-EXPECTED JSON:
+EXPECTED:
 {"duplicate": true, "confidence": 0.9, "reply": "Yes — earlier [2] confirmed “the new car is green” (Aug 24, 10:12 PM, Bob)."}
-END EXAMPLE
-  `.trim();
+
+EXAMPLE B
+NEW MESSAGE:
+"When is the deploy?"
+RELATED:
+[1] 2025-08-24 09:02 — Sam: deploy is 3pm CT today
+EXPECTED:
+{"duplicate": true, "confidence": 0.85, "reply": "Deploy is at 3pm CT — see [1] (Sam, Aug 24, 9:02 AM)."}
+
+EXAMPLE C
+NEW MESSAGE:
+"What’s our error budget?"
+RELATED:
+[1] 2025-08-20 — Pat: let’s ask SRE later
+EXPECTED:
+{"duplicate": false, "confidence": 0.2, "reply": ""}
+`.trim();
 
   const resp = await openai.chat.completions.create({
-    model: OPENAI_MODEL, // keep consistent with your config (e.g., "gpt-5-nano")
+    model: OPENAI_MODEL, // "gpt-5-nano"
     messages: [
       {
         role: 'system',
         content:
-          'You prevent repeated Q&A by checking recent chat history. ' +
-          'If prior messages already contain a direct answer to the NEW MESSAGE, ' +
-          'return duplicate=true with a short recap including a quoted snippet, date/time, and author.\n' +
-          'Be decisive when a clear answer exists (e.g., “yes/no”, or a direct statement that resolves the question).\n' +
-          'Return only via the tool/function with JSON — no prose.',
+          'You detect duplicate questions by scanning recent chat history and produce a concise recap. ' +
+          'Return ONLY via tool call with strict JSON.',
       },
-      { role: 'user', content: example },
+      { role: 'user', content: examples },
       {
         role: 'user',
         content: `NEW MESSAGE:\n${newMsg}\n\nRELATED HISTORY (most relevant first):\n${related}`,
@@ -173,7 +181,7 @@ END EXAMPLE
       },
     ],
     tool_choice: { type: 'function', function: { name: 'set_decision' } },
-    ...({ max_completion_tokens: 200 } as any),
+    ...({ max_completion_tokens: 128 } as any),
     stream: false,
   });
 
