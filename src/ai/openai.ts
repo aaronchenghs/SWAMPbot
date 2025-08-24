@@ -30,6 +30,8 @@ function parseFirstToolCallJSON(choice?: Choice): any | null {
 /* ------------------------------- small helpers ------------------------------ */
 function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
   console.log('Full response:', r);
+  console.log('First choice:', r.choices);
+  console.log('First choice message:', r.choices?.[0]?.message);
   return r.choices?.[0]?.message?.content ?? '';
 }
 
