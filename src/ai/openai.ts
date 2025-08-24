@@ -29,6 +29,7 @@ function parseFirstToolCallJSON(choice?: Choice): any | null {
 
 /* ------------------------------- small helpers ------------------------------ */
 function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
+  console.log('Full response:', r);
   return r.choices?.[0]?.message?.content ?? '';
 }
 
@@ -216,6 +217,8 @@ EXPECTED:
     stream: false,
   });
 
+  console.log('resp1:', resp1);
+
   const choice1 = resp1.choices?.[0];
   let json = parseFirstToolCallJSON(choice1);
 
@@ -240,6 +243,7 @@ EXPECTED:
       ...({ max_completion_tokens: 128 } as any),
       stream: false,
     });
+    console.log('resp2:', resp2);
     json = extractJson(getContent(resp2)) ?? {};
   }
 
