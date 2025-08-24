@@ -57,6 +57,7 @@ export async function classifyQuestion(text: string) {
   });
 
   // Prefer tool call JSON
+  console.log('resp:', resp);
   const choice = resp.choices?.[0];
   const toolJson = parseToolCallJSON(choice);
   if (toolJson) {
