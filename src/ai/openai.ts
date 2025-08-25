@@ -89,7 +89,8 @@ export async function answerFromHistoryDirect(
           '- Only set duplicate=true if at least ONE prior message clearly ANSWERS the question (not another question).\n' +
           '- An answer is a yes/no or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
           '- Do NOT cite the question itself as evidence.\n' +
-          '- Keep reply 1–3 short sentences with [index] citation(s), author, and date/time.\n' +
+          '- Keep reply 1–3 short sentences.\n' +
+          '- The "reply" MUST include at least one [index] citation AND the author name AND date/time for a cited item, e.g. “… (Aug 24, 10:12 PM, Alice)”.\n' +
           'Return ONLY JSON (no prose) with keys exactly:\n' +
           '{"duplicate": boolean, "confidence": number, "reply": string, "evidence": number[]}',
       },
