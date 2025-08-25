@@ -8,6 +8,7 @@ import {
 } from '../webhookUtils';
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
 import { APP_CONFIG } from '../config';
+import { resolveDisplayName } from '../services/names.service';
 
 export const webhookRouter = Router();
 
@@ -31,10 +32,8 @@ webhookRouter.post('/', json(), async (req, res) => {
   try {
     const body: AnyRecord = (req.body && (req.body.body || req.body)) || {};
     if (!isTeamMessagingPostEvent(body)) return;
-    const post = normalizePost(body);
-    console.log('Normalized post:', post);
+    const post = await normalizePost(body);
     if (post.creatorId === BOT_ID) return; // ignore bot's own messages
-    console.log(post.creatorId);
 
     await indexMessage(post);
     if (wasBotMentioned(post)) {
@@ -82,18 +81,22 @@ function pickPostNode(body: AnyRecord): AnyRecord {
   return body?.post || body?.message || body || {};
 }
 
-function normalizePost(raw: AnyRecord): NormalizedPost {
+export async function normalizePost(raw: AnyRecord): Promise<NormalizedPost> {
   const post = pickPostNode(raw);
 
   const id = String(post?.id ?? raw?.id ?? '');
   const groupId = String(post?.groupId ?? raw?.groupId ?? raw?.chatId ?? '');
+
   const creatorObj = post?.creator || raw?.creator || {};
   const creatorId = String(
     creatorObj?.id ?? post?.creatorId ?? raw?.creatorId ?? '',
   );
-  const creatorName =
+
+  // Prefer any provided name, but allow resolution below
+  let creatorName =
     String(creatorObj?.name ?? post?.creatorName ?? raw?.creatorName ?? '') ||
-    'friend';
+    '';
+
   const createdAt = Date.parse(
     String(post?.creationTime ?? raw?.creationTime ?? new Date().toISOString()),
   );
@@ -123,6 +126,14 @@ function normalizePost(raw: AnyRecord): NormalizedPost {
 
   const rawText = String(post?.text ?? raw?.text ?? '');
   const cleanText = rawText.replace(MENTIONS_MARKUP_REGEX, '').trim();
+
+  if (!creatorName || creatorName === 'friend') {
+    try {
+      const resolved = await resolveDisplayName(creatorId, groupId, mentions);
+      if (resolved) creatorName = resolved;
+    } catch {}
+  }
+  if (!creatorName) creatorName = 'friend';
 
   return {
     id,
