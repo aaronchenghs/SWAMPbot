@@ -32,7 +32,9 @@ webhookRouter.post('/', json(), async (req, res) => {
     const body: AnyRecord = (req.body && (req.body.body || req.body)) || {};
     if (!isTeamMessagingPostEvent(body)) return;
     const post = normalizePost(body);
+    console.log('Normalized post:', post);
     if (post.creatorId === BOT_ID) return; // ignore bot's own messages
+    console.log(post.creatorId);
 
     await indexMessage(post);
     if (wasBotMentioned(post)) {
