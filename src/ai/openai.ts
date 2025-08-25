@@ -99,7 +99,13 @@ export async function answerFromHistoryDirect(
         content:
           `QUESTION:\n${newMsg.slice(0, 500)}\n\n` +
           'RECENT MESSAGES (newest first):\n' +
-          list,
+          list +
+          '\n\n' +
+          'Rules:\n' +
+          '- If any message clearly answers the question (e.g., says who/what/when OR a yes/no), set duplicate=true.\n' +
+          '- Include author/date in reply if possible.\n' +
+          '- Keep reply to 1–3 short sentences.\n' +
+          '- If not clearly answered, set duplicate=false and reply empty.',
       },
     ],
     max_tokens: MAXTOK_ANSWER,
