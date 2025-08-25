@@ -1,6 +1,4 @@
-// src/controllers/webhook.controller.ts
 import { Router, json } from 'express';
-import { cfg } from '../config';
 import { BOT_ID, MENTIONS_MARKUP_REGEX } from '../constants';
 import {
   extractCommandText,
@@ -9,6 +7,7 @@ import {
   postText,
 } from '../webhookUtils';
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
+import { APP_CONFIG } from '../config';
 
 export const webhookRouter = Router();
 
@@ -22,7 +21,7 @@ webhookRouter.post('/', json(), async (req, res) => {
 
   // Console “Enable bot webhooks” verification
   const vt = req.get('Verification-Token');
-  if (process.env.VERIFICATION_TOKEN && vt !== process.env.VERIFICATION_TOKEN) {
+  if (APP_CONFIG.VERIFICATION_TOKEN && vt !== APP_CONFIG.VERIFICATION_TOKEN) {
     console.warn('Webhook rejected: bad verification token');
     return res.status(401).end();
   }
@@ -138,7 +137,7 @@ function wasBotMentioned(n: NormalizedPost): boolean {
   if (isDirect) return true;
 
   const mentionedById = n.mentions.some((m: any) => String(m?.id) === BOT_ID);
-  const nameMention = new RegExp(`\\b${cfg.BOT_NAME}\\b`, 'i').test(
+  const nameMention = new RegExp(`\\b${APP_CONFIG.BOT_NAME}\\b`, 'i').test(
     n.cleanText,
   );
   return mentionedById || nameMention;

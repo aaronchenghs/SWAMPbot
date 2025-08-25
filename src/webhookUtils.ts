@@ -1,7 +1,7 @@
 import { platform } from './services/ringcentral.service';
 import type { RcId, MentionSpec, Command } from './commands/types';
 import { commands } from './commands';
-import { cfg } from './config';
+import { APP_CONFIG } from './config';
 
 export async function postText(
   chatId: RcId,
@@ -31,7 +31,7 @@ export function helpMessage() {
 
 /** Extract a command text from cleaned content, removing the bot name when present */
 export function extractCommandText(cleanText: string): string {
-  const re = new RegExp(`\\b${cfg.BOT_NAME}\\b`, 'i');
+  const re = new RegExp(`\\b${APP_CONFIG.BOT_NAME}\\b`, 'i');
   return cleanText.replace(re, '').trim();
 }
 

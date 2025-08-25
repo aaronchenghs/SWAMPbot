@@ -1,5 +1,5 @@
 import { RcId } from './commands/types';
-import { cfg } from './config';
+import { APP_CONFIG } from './config';
 import { QUESTION_REGEX } from './constants';
 
 export function getRandomGreeting(displayName?: string) {
@@ -21,8 +21,8 @@ export function getRandomGreeting(displayName?: string) {
 }
 
 export function mentionsBot(text: string) {
-  if (!cfg.BOT_NAME) return true;
-  return new RegExp(cfg.BOT_NAME, 'i').test(text || '');
+  if (!APP_CONFIG.BOT_NAME) return true;
+  return new RegExp(APP_CONFIG.BOT_NAME, 'i').test(text || '');
 }
 
 export const mentionPerson = (id: RcId) => `![:Person](${id})`;

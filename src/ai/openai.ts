@@ -1,15 +1,14 @@
 import OpenAI from 'openai';
 import { OPENAI_MODEL } from '../constants';
 import { extractJson, heuristicIsQuestion } from '../utils';
+import { APP_CONFIG } from '../config';
 
 export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
-
-// ---- Tunables (env overrides) ----
-const MODEL = OPENAI_MODEL || 'gpt-4o-mini';
-const MAXTOK_CLASSIFY = Number(process.env.OAI_MAXTOK_CLASSIFY || '96');
-const MAXTOK_ANSWER = Number(process.env.OAI_MAXTOK_ANSWER || '384');
-const TEMP_CLASSIFY = Number(process.env.OAI_TEMP_CLASSIFY || '0.2');
-const TEMP_ANSWER = Number(process.env.OAI_TEMP_ANSWER || '0.2');
+const MODEL = APP_CONFIG.OPENAI_MODEL;
+const MAXTOK_CLASSIFY = APP_CONFIG.OAI_MAXTOK_CLASSIFY;
+const MAXTOK_ANSWER = APP_CONFIG.OAI_MAXTOK_ANSWER;
+const TEMP_CLASSIFY = APP_CONFIG.OAI_TEMP_CLASSIFY;
+const TEMP_ANSWER = APP_CONFIG.OAI_TEMP_ANSWER;
 
 // ---- Small helpers ----
 function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
@@ -75,11 +74,6 @@ export async function classifyQuestion(text: string) {
 }
 
 // ---- Direct “read history and decide” → { duplicate, confidence, reply } ----
-/**
- * Give the model the recent messages (no embeddings) and ask:
- *   - Is the new question already answered here?
- *   - If yes, produce a short recap with citation(s) like [2].
- */
 export async function answerFromHistoryDirect(
   newMsg: string,
   history: Array<{ author: string; when: string; text: string }>,

@@ -1,13 +1,13 @@
 import { SDK } from '@ringcentral/sdk';
 import fs from 'fs';
 import path from 'path';
-import { cfg } from '../config';
 import { normalizeAuth } from '../controllers/oauth.controller';
+import { APP_CONFIG } from '../config';
 
 const rcsdk = new SDK({
-  server: cfg.RINGCENTRAL_SERVER_URL,
-  clientId: cfg.RINGCENTRAL_CLIENT_ID,
-  clientSecret: cfg.RINGCENTRAL_CLIENT_SECRET,
+  server: APP_CONFIG.RINGCENTRAL_SERVER_URL,
+  clientId: APP_CONFIG.RINGCENTRAL_CLIENT_ID,
+  clientSecret: APP_CONFIG.RINGCENTRAL_CLIENT_SECRET,
 });
 export const platform = rcsdk.platform();
 

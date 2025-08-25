@@ -1,5 +1,5 @@
+import { APP_CONFIG } from '../config';
 import { platform } from './ringcentral.service';
-import { cfg } from '../config';
 
 const FILTERS = [
   '/team-messaging/v1/posts',
@@ -9,7 +9,7 @@ const FILTERS = [
 ];
 
 export async function ensureSubscription() {
-  if (cfg.USE_WEBHOOKS !== 'true') {
+  if (APP_CONFIG.USE_WEBHOOKS !== 'true') {
     console.log('Webhooks disabled; using polling.');
     return;
   }
@@ -24,7 +24,10 @@ export async function ensureSubscription() {
 
     const createBody = {
       eventFilters: FILTERS,
-      deliveryMode: { transportType: 'WebHook', address: cfg.WEBHOOK_URL },
+      deliveryMode: {
+        transportType: 'WebHook',
+        address: APP_CONFIG.WEBHOOK_URL,
+      },
       expiresIn: 604799,
     };
 
@@ -58,13 +61,16 @@ export async function ensureSubscription() {
     const existing = (list?.records || []).find(
       (s: any) =>
         s?.deliveryMode?.transportType === 'WebHook' &&
-        s?.deliveryMode?.address === cfg.WEBHOOK_URL,
+        s?.deliveryMode?.address === APP_CONFIG.WEBHOOK_URL,
     );
 
     if (existing) {
       await platform.put(`/restapi/v1.0/subscription/${existing.id}`, {
         eventFilters: FILTERS,
-        deliveryMode: { transportType: 'WebHook', address: cfg.WEBHOOK_URL },
+        deliveryMode: {
+          transportType: 'WebHook',
+          address: APP_CONFIG.WEBHOOK_URL,
+        },
       });
       console.log('🔁 webhook renewed/updated', existing.id);
       return;

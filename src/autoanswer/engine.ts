@@ -1,9 +1,10 @@
 import { classifyQuestion, answerFromHistoryDirect, embed } from '../ai/openai';
+import { APP_CONFIG } from '../config';
 import { QUESTION_REGEX } from '../constants';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
 
-const LOOKBACK_DAYS = Number(process.env.DEDUP_LOOKBACK_DAYS || '7');
-const MIN_CONF = Number(process.env.DEDUP_MIN_CONFIDENCE || '0.65');
+const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
+const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
 
 /** Index a message (text + embedding) for later recall */
 export async function indexIncoming(m: MsgRow) {
@@ -25,10 +26,7 @@ export async function maybeAutoReply(
   post: (text: string) => Promise<void>,
 ) {
   const text = (newMsg.text || '').trim();
-  if (!text) return;
-
-  // Light gate to save tokens
-  if (!QUESTION_REGEX.test(text)) return;
+  if (!text || !QUESTION_REGEX.test(text)) return;
 
   // Cheap classifier (reduces false positives before calling bigger prompt)
   const cls = await classifyQuestion(text);
