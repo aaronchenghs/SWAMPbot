@@ -12,7 +12,6 @@ export async function indexIncoming(m: MsgRow) {
     const v = await embed(t);
     addMessage(m, v);
   } else {
-    // still capture tiny/system-like messages so timeline is complete
     addMessage(m, new Array(1536).fill(0));
   }
 }
@@ -44,7 +43,7 @@ export async function maybeAutoReply(
   const history = recent
     .filter((r) => r.id !== newMsg.id)
     .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 40) // keep it tight for the model
+    .slice(0, 40)
     .map((r) => ({
       author: r.authorName || r.authorId || 'unknown',
       when: new Date(r.createdAt).toLocaleString(),
@@ -54,8 +53,7 @@ export async function maybeAutoReply(
   const decision = await answerFromHistoryDirect(text, history);
   if (decision.duplicate && decision.confidence >= MIN_CONF && decision.reply) {
     await post(
-      `I think we covered this recently. Here's the recap:\n\n${decision.reply}\n\n` +
-        `(auto-reply; say “@${process.env.BOT_NAME || 'swampbot'} ignore” to disable in this chat)`,
+      `I think we covered this recently. Here's the recap:\n\n${decision.reply}`,
     );
   }
 }
