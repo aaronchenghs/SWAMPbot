@@ -1,5 +1,5 @@
 import { Router, json } from 'express';
-import { BOT_ID, MENTIONS_MARKUP_REGEX } from '../constants';
+import { BOT_ID, MENTIONS_MARKUP_REGEX, QUESTION_REGEX } from '../constants';
 import {
   extractCommandText,
   findCommand,
@@ -9,6 +9,7 @@ import {
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
 import { APP_CONFIG } from '../config';
 import { resolveDisplayName } from '../services/names.service';
+import { stripQuotedText } from '../utils';
 
 export const webhookRouter = Router();
 
@@ -59,6 +60,8 @@ type NormalizedPost = {
   mentions: any[];
   rawText: string;
   cleanText: string;
+  hasQuote: boolean;
+  textNoQuotes: string;
 };
 
 function isTeamMessagingPostEvent(body: AnyRecord): boolean {
@@ -81,22 +84,18 @@ function pickPostNode(body: AnyRecord): AnyRecord {
   return body?.post || body?.message || body || {};
 }
 
-export async function normalizePost(raw: AnyRecord): Promise<NormalizedPost> {
+function normalizePost(raw: Record<string, any>): NormalizedPost {
   const post = pickPostNode(raw);
 
   const id = String(post?.id ?? raw?.id ?? '');
   const groupId = String(post?.groupId ?? raw?.groupId ?? raw?.chatId ?? '');
-
   const creatorObj = post?.creator || raw?.creator || {};
   const creatorId = String(
     creatorObj?.id ?? post?.creatorId ?? raw?.creatorId ?? '',
   );
-
-  // Prefer any provided name, but allow resolution below
-  let creatorName =
-    String(creatorObj?.name ?? post?.creatorName ?? raw?.creatorName ?? '') ||
-    '';
-
+  const creatorName = String(
+    creatorObj?.name ?? post?.creatorName ?? raw?.creatorName ?? '',
+  );
   const createdAt = Date.parse(
     String(post?.creationTime ?? raw?.creationTime ?? new Date().toISOString()),
   );
@@ -124,16 +123,16 @@ export async function normalizePost(raw: AnyRecord): Promise<NormalizedPost> {
     (Array.isArray(raw?.mentions) && raw.mentions) ||
     [];
 
+  const attachments: any[] = Array.isArray(post?.attachments)
+    ? post.attachments
+    : [];
+  const hasQuote =
+    Boolean(post?.quoteOfId) ||
+    attachments.some((a) => String(a?.type || '').toLowerCase() === 'quote');
+
   const rawText = String(post?.text ?? raw?.text ?? '');
   const cleanText = rawText.replace(MENTIONS_MARKUP_REGEX, '').trim();
-
-  if (!creatorName || creatorName === 'friend') {
-    try {
-      const resolved = await resolveDisplayName(creatorId, groupId, mentions);
-      if (resolved) creatorName = resolved;
-    } catch {}
-  }
-  if (!creatorName) creatorName = 'friend';
+  const textNoQuotes = stripQuotedText(cleanText);
 
   return {
     id,
@@ -146,6 +145,8 @@ export async function normalizePost(raw: AnyRecord): Promise<NormalizedPost> {
     mentions,
     rawText,
     cleanText,
+    hasQuote,
+    textNoQuotes,
   };
 }
 
@@ -163,22 +164,25 @@ function wasBotMentioned(n: NormalizedPost): boolean {
 
 /** Index the message into your history store (embeddings & text) */
 async function indexMessage(n: NormalizedPost) {
-  if (!n.cleanText) return;
+  const text = n.textNoQuotes || n.cleanText;
+  if (!text) return;
   await indexIncoming({
     id: n.id,
     chatId: n.groupId,
     authorId: n.creatorId,
     authorName: n.creatorName,
     createdAt: n.createdAt,
-    text: n.cleanText,
+    text,
     parentId: n.parentId,
   });
 }
 
 /** Auto-answer (only in non-DM + not mentioned branch) */
 async function tryAutoAnswer(n: NormalizedPost) {
-  if (!n.cleanText) return;
-  if (n.chatType === 'Direct') return; // never auto-answer in DMs
+  const visible = n.textNoQuotes || n.cleanText;
+  if (!visible) return;
+  if (n.hasQuote && !QUESTION_REGEX.test(visible)) return;
+
   await maybeAutoReply(
     {
       id: n.id,
@@ -186,10 +190,10 @@ async function tryAutoAnswer(n: NormalizedPost) {
       authorId: n.creatorId,
       authorName: n.creatorName,
       createdAt: n.createdAt,
-      text: n.cleanText,
+      text: visible,
       parentId: n.parentId,
     },
-    (text: string) => postText(n.groupId as any, text),
+    (text: string, opts?: any) => postText(n.groupId as any, text, opts),
   );
 }
 

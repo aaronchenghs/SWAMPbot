@@ -1,4 +1,8 @@
-import { QUESTION_REGEX } from './constants';
+import {
+  BLOCKQUOTE_REGEX,
+  QUESTION_REGEX,
+  RC_QUOTE_MARKUP_REGEX,
+} from './constants';
 import { formatMention } from './webhookUtils';
 
 function pickFrom<T>(arr: readonly T[]): T {
@@ -52,4 +56,12 @@ export function extractJson(text: string): any {
 
 export function heuristicIsQuestion(t: string): boolean {
   return /[?]/.test(t) || QUESTION_REGEX.test(t);
+}
+
+export function stripQuotedText(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(BLOCKQUOTE_REGEX, '')
+    .replace(RC_QUOTE_MARKUP_REGEX, '')
+    .trim();
 }

@@ -3,7 +3,7 @@ import { APP_CONFIG } from '../config';
 import { QUESTION_REGEX } from '../constants';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
 import { getRandomDeadupLead } from '../utils';
-import { formatMention } from '../webhookUtils';
+import { formatMention, PostOptions } from '../webhookUtils';
 
 const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
 const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
@@ -25,7 +25,7 @@ export async function indexIncoming(m: MsgRow) {
  */
 export async function maybeAutoReply(
   newMsg: MsgRow,
-  post: (text: string) => Promise<void>,
+  post: (text: string, opts?: PostOptions) => Promise<void>,
 ) {
   const text = (newMsg.text || '').trim();
   if (!text || !QUESTION_REGEX.test(text)) return;
@@ -54,6 +54,10 @@ export async function maybeAutoReply(
   if (decision.duplicate && decision.confidence >= MIN_CONF && decision.reply) {
     const mention = formatMention(newMsg.authorId, newMsg.authorName);
     const lead = getRandomDeadupLead();
-    await post(`**🔔 ${mention} ${lead}:**\n${decision.reply}`);
+    const threadAnchor = newMsg.parentId ?? newMsg.id;
+    console.log('threadAnchor', threadAnchor);
+    await post(`**🔔 ${mention} ${lead}:**\n${decision.reply}`, {
+      parentId: threadAnchor,
+    });
   }
 }

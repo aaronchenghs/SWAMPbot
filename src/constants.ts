@@ -4,3 +4,5 @@ export const GREETING_REGEX = /\b(hi|hello|hey|howdy|yo|sup)\b/i;
 export const MENTIONS_MARKUP_REGEX = /!\[:[^\]]+\]\([^)]+\)/g;
 export const QUESTION_REGEX =
   /[?]|^\s*(how|what|why|where|when|who|is|are|can|should|could|does|do|did)\b/i;
+export const BLOCKQUOTE_REGEX = /(^|\n)>\s?.*(?=\n|$)/g;
+export const RC_QUOTE_MARKUP_REGEX = /!\[:Quote\]\([^)]+\)/g;

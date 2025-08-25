@@ -3,19 +3,24 @@ import type { RcId, MentionSpec, Command } from './commands/types';
 import { commands } from './commands';
 import { APP_CONFIG } from './config';
 
+export type PostOptions = {
+  parentId?: string;
+};
+
 export async function postText(
-  chatId: RcId,
+  chatId: string,
   text: string,
-  opts?: { mentions?: ReadonlyArray<MentionSpec> },
+  opts?: PostOptions,
 ) {
-  const body: any = { text };
-  if (opts?.mentions?.length) {
-    body.mentions = opts.mentions.map((m) => ({
-      id: String(m.id),
-      type: m.type,
-    }));
-  }
-  await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, body);
+  const body: any = { groupId: chatId, text };
+  if (opts?.parentId) body.parentId = opts.parentId;
+
+  // DEBUG so you can confirm the payload actually includes parentId
+  console.log('POST /team-messaging/v1/posts body:', body);
+
+  const r = await platform.post(`/team-messaging/v1/posts`, body);
+  const j = await r.json();
+  console.log('Create post response:', j);
 }
 
 export function formatMention(
