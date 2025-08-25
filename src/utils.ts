@@ -1,6 +1,10 @@
 import { QUESTION_REGEX } from './constants';
 import { formatMention } from './webhookUtils';
 
+function pickFrom<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 export function getRandomGreeting(friendName?: string, friendId?: string) {
   const name = formatMention(friendId, friendName);
   const quips = [
@@ -16,7 +20,20 @@ export function getRandomGreeting(friendName?: string, friendId?: string) {
     `Hey ${name}, GEAUX TIGERS! 🐯🟪🟨`,
     `Hey ${name}, LIONS UP! 🦁🟩🟨`,
   ];
-  return quips[Math.floor(Math.random() * quips.length)];
+  return pickFrom(quips);
+}
+
+const DEDUP_LEADS = [
+  'I think we covered this recently',
+  'Looks like we answered this already',
+  'We just discussed this',
+  'This was resolved earlier',
+  'This came up recently',
+  'We’ve got an earlier answer for this',
+] as const;
+
+export function getRandomDeadupLead(): string {
+  return pickFrom(DEDUP_LEADS);
 }
 
 export function extractJson(text: string): any {
