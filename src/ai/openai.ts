@@ -1,11 +1,17 @@
-// src/ai/openai.ts
 import OpenAI from 'openai';
 import { OPENAI_MODEL } from '../constants';
 import { extractJson, heuristicIsQuestion } from '../utils';
 
 export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-/* ------------------------------- small helpers ------------------------------ */
+// ---- Tunables (env overrides) ----
+const MODEL = OPENAI_MODEL || 'gpt-4o-mini';
+const MAXTOK_CLASSIFY = Number(process.env.OAI_MAXTOK_CLASSIFY || '96');
+const MAXTOK_ANSWER = Number(process.env.OAI_MAXTOK_ANSWER || '384');
+const TEMP_CLASSIFY = Number(process.env.OAI_TEMP_CLASSIFY || '0.2');
+const TEMP_ANSWER = Number(process.env.OAI_TEMP_ANSWER || '0.2');
+
+// ---- Small helpers ----
 function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
   if (!r?.choices?.length) return '';
   return r.choices[0]?.message?.content ?? '';
@@ -30,6 +36,7 @@ function buildList(
     .join('\n');
 }
 
+// ---- Embeddings ----
 export async function embed(text: string): Promise<number[]> {
   const r = await openai.embeddings.create({
     model: 'text-embedding-3-small',
@@ -38,10 +45,11 @@ export async function embed(text: string): Promise<number[]> {
   return r.data[0].embedding;
 }
 
+// ---- “Is this a question?” classifier → { isQuestion, reason } ----
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
   const r = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
+    model: MODEL,
     messages: [
       {
         role: 'system',
@@ -51,7 +59,8 @@ export async function classifyQuestion(text: string) {
       },
       { role: 'user', content: `Text:\n${text.slice(0, 700)}` },
     ],
-    ...({ max_completion_tokens: 64 } as any),
+    max_tokens: MAXTOK_CLASSIFY,
+    temperature: TEMP_CLASSIFY,
     stream: false,
   });
 
@@ -65,7 +74,7 @@ export async function classifyQuestion(text: string) {
   return { isQuestion: fallback, reason: 'heuristic fallback' };
 }
 
-/* ---------------------- direct “read history and decide” --------------------- */
+// ---- Direct “read history and decide” → { duplicate, confidence, reply } ----
 /**
  * Give the model the recent messages (no embeddings) and ask:
  *   - Is the new question already answered here?
@@ -76,9 +85,8 @@ export async function answerFromHistoryDirect(
   history: Array<{ author: string; when: string; text: string }>,
 ) {
   const list = buildList(history, 16);
-  console.log('Getting an answer from chatGPT...');
   const response = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
+    model: MODEL,
     messages: [
       {
         role: 'system',
@@ -102,33 +110,12 @@ export async function answerFromHistoryDirect(
           '- If not clearly answered, set duplicate=false and reply empty.',
       },
     ],
-    ...({ max_completion_tokens: 140 } as any),
+    max_tokens: MAXTOK_ANSWER,
+    temperature: TEMP_ANSWER,
     stream: false,
   });
-  console.log(response);
-  console.log(response.choices);
-  const json = extractJson(getContent(response)) || {};
-  // Simple fallback for “who … ?” shape if model returns nothing
-  if (
-    (!json || typeof json.duplicate === 'undefined') &&
-    /^\s*who\b/i.test(newMsg)
-  ) {
-    const whoHit = history.find((h) =>
-      /\b([A-Z][a-zA-Z]+)\b.+\bneeds help\b/i.test(h.text),
-    );
-    if (whoHit) {
-      const m = whoHit.text.match(/\b([A-Z][a-zA-Z]+)\b.+\bneeds help\b/i);
-      const name = m?.[1];
-      if (name) {
-        return {
-          duplicate: true,
-          confidence: 0.8,
-          reply: `${name} — see [${history.indexOf(whoHit) + 1}] (${whoHit.when}, ${whoHit.author}).`,
-        };
-      }
-    }
-  }
 
+  const json = extractJson(getContent(response)) || {};
   return {
     duplicate: !!json.duplicate,
     confidence: Number(json.confidence ?? 0),
