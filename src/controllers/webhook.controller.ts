@@ -81,32 +81,36 @@ function pickPostNode(body: AnyRecord): AnyRecord {
 }
 
 function normalizePost(raw: AnyRecord): NormalizedPost {
-  console.log('Normalizing post:', raw);
   const post = pickPostNode(raw);
 
   const id = String(post?.id ?? raw?.id ?? '');
   const groupId = String(post?.groupId ?? raw?.groupId ?? raw?.chatId ?? '');
-  const creator = post?.creator || raw?.creator || {};
-  const creatorId = String(creator?.id || '');
-  const creatorName = String(creator?.name || 'friend');
+  const creatorObj = post?.creator || raw?.creator || {};
+  const creatorId = String(
+    creatorObj?.id ?? post?.creatorId ?? raw?.creatorId ?? '',
+  );
+  const creatorName =
+    String(creatorObj?.name ?? post?.creatorName ?? raw?.creatorName ?? '') ||
+    'friend';
   const createdAt = Date.parse(
-    String(post?.creationTime || raw?.creationTime || new Date().toISOString()),
+    String(post?.creationTime ?? raw?.creationTime ?? new Date().toISOString()),
   );
 
   const parentId: string | undefined =
-    post?.parentId ||
-    post?.rootId ||
-    post?.topicId ||
-    post?.quoteOfId ||
+    post?.parentId ??
+    post?.rootId ??
+    post?.topicId ??
+    post?.quoteOfId ??
     undefined;
 
-  const chatType = String(
-    post?.group?.type ||
-      raw?.group?.type ||
-      raw?.chat?.type ||
-      raw?.groupType ||
-      '',
-  );
+  const chatType =
+    String(
+      post?.group?.type ??
+        raw?.group?.type ??
+        raw?.chat?.type ??
+        raw?.groupType ??
+        '',
+    ) || 'Group';
 
   const mentions: any[] =
     (Array.isArray(post?.mentions) && post.mentions) ||
@@ -115,7 +119,7 @@ function normalizePost(raw: AnyRecord): NormalizedPost {
     (Array.isArray(raw?.mentions) && raw.mentions) ||
     [];
 
-  const rawText = String(post?.text || raw?.text || '');
+  const rawText = String(post?.text ?? raw?.text ?? '');
   const cleanText = rawText.replace(MENTIONS_MARKUP_REGEX, '').trim();
 
   return {
