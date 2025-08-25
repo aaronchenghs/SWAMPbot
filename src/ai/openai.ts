@@ -91,6 +91,7 @@ export async function answerFromHistoryDirect(
           '- Do NOT cite the question itself as evidence.\n' +
           '- Keep reply 1–3 short sentences.\n' +
           '- The "reply" MUST include at least one [index] citation AND the author name AND date/time for a cited item, e.g. “… (Aug 24, 10:12 PM, Alice)”.\n' +
+          '- After the timestamp, quote the actual message you got the answer from.\n' +
           'Return ONLY JSON (no prose) with keys exactly:\n' +
           '{"duplicate": boolean, "confidence": number, "reply": string, "evidence": number[]}',
       },
@@ -103,7 +104,7 @@ export async function answerFromHistoryDirect(
           '\n\n' +
           'Rules:\n' +
           '- If any message clearly answers the question (e.g., says who/what/when OR a yes/no), set duplicate=true.\n' +
-          '- Include author/date in reply if possible.\n' +
+          '- Include author/date in reply if possible, along with the quote of the referenced answer.\n' +
           '- Keep reply to 1–3 short sentences.\n' +
           '- If not clearly answered, set duplicate=false and reply empty.',
       },
