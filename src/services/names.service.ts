@@ -57,7 +57,6 @@ async function ensureChatMembers(chatId: string): Promise<Map<string, string>> {
 
 /**
  * Resolve a display name for the given person id.
- * Order: cache -> mentions[] -> /persons/:id -> /chats/:id/members -> 'friend'
  */
 export async function resolveDisplayName(
   personId: string,
