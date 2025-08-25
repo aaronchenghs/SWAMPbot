@@ -9,6 +9,6 @@ export const helloCommand: Command = {
   usage: 'hello',
   matches: (text) => GREETING_REGEX.test(text),
   async run(ctx) {
-    await ctx.reply(getRandomGreeting(ctx.creatorName));
+    await ctx.reply(getRandomGreeting(ctx.creatorName, ctx.creatorId));
   },
 };

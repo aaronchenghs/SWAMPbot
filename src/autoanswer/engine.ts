@@ -2,6 +2,7 @@ import { classifyQuestion, answerFromHistoryDirect, embed } from '../ai/openai';
 import { APP_CONFIG } from '../config';
 import { QUESTION_REGEX } from '../constants';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
+import { formatMention } from '../webhookUtils';
 
 const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
 const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
@@ -50,11 +51,7 @@ export async function maybeAutoReply(
 
   const decision = await answerFromHistoryDirect(text, history);
   if (decision.duplicate && decision.confidence >= MIN_CONF && decision.reply) {
-    const mention = newMsg.authorId
-      ? `![:Person](${newMsg.authorId}) `
-      : newMsg.authorName
-        ? `@${newMsg.authorName} `
-        : '';
+    const mention = formatMention(newMsg.authorId, newMsg.authorName);
     await post(
       `**🔔 ${mention} I think we covered this recently:**\n${decision.reply}`,
     );

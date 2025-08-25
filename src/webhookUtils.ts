@@ -18,6 +18,17 @@ export async function postText(
   await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, body);
 }
 
+export function formatMention(
+  authorId?: string | null,
+  authorName?: string | null,
+): string {
+  const id = authorId?.toString().trim();
+  if (id) return `![:Person](${id}) `;
+  const name = authorName?.toString().trim();
+  if (name) return `@${name} `;
+  return 'friend';
+}
+
 /** Build a compact help message from registered commands */
 export function helpMessage() {
   const lines = commands.map((c: Command) => {

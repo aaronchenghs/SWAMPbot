@@ -1,7 +1,8 @@
 import { QUESTION_REGEX } from './constants';
+import { formatMention } from './webhookUtils';
 
-export function getRandomGreeting(displayName?: string) {
-  const name = displayName || 'friend';
+export function getRandomGreeting(friendName?: string, friendId?: string) {
+  const name = formatMention(friendId, friendName);
   const quips = [
     `Howdy, ${name}! How's your fantasy team doing? 🏈`,
     `oh hi ${name} 👋 — has anyone made the Jimmy Johns order yet? 🥪`,
