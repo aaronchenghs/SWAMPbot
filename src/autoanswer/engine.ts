@@ -50,8 +50,6 @@ export async function maybeAutoReply(
 
   const decision = await answerFromHistoryDirect(text, history);
   if (decision.duplicate && decision.confidence >= MIN_CONF && decision.reply) {
-    await post(
-      `I think we covered this recently. Here's the recap:\n\n${decision.reply}`,
-    );
+    await post(`**🔔 I think we covered this recently:**\n${decision.reply}`);
   }
 }

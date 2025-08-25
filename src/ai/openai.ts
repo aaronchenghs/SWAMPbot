@@ -98,7 +98,7 @@ export async function answerFromHistoryDirect(
           '\n\n' +
           'Rules:\n' +
           '- If any message clearly answers the question (e.g., says who/what/when OR a yes/no), set duplicate=true.\n' +
-          '- Include [index] citation(s) and author/date in reply.\n' +
+          '- Include author/date in reply if possible.\n' +
           '- Keep reply to 1–3 short sentences.\n' +
           '- If not clearly answered, set duplicate=false and reply empty.',
       },
