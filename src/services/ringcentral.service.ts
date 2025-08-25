@@ -33,10 +33,3 @@ export function restoreAuthIfExists() {
     console.error('restoreAuthIfExists error', e);
   }
 }
-
-export async function saveToken(access_token: string) {
-  const data = normalizeAuth({ access_token });
-  platform.auth().setData(data);
-  fs.writeFileSync(tokenFile, JSON.stringify(data, null, 2));
-  console.log('✅ token saved (normalized)');
-}

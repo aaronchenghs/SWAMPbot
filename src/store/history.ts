@@ -54,27 +54,3 @@ export function recentInChat(chatId: string, sinceMs: number): MsgRow[] {
   );
   return stmt.all(chatId, sinceMs) as MsgRow[];
 }
-
-export function getById(id: string): MsgRow | undefined {
-  const s = db.prepare('SELECT * FROM messages WHERE id=?');
-  return s.get(id) as MsgRow | undefined;
-}
-
-export function getReplies(parentId: string, limit = 10): MsgRow[] {
-  const s = db.prepare(
-    'SELECT * FROM messages WHERE parentId=? ORDER BY createdAt ASC LIMIT ?',
-  );
-  return s.all(parentId, limit) as MsgRow[];
-}
-
-export function getVector(id: string): Float32Array | null {
-  const s = db.prepare('SELECT embedding FROM vectors WHERE id=?');
-  const row = s.get(id) as { embedding: Buffer } | undefined;
-  return row
-    ? new Float32Array(
-        row.embedding.buffer,
-        row.embedding.byteOffset,
-        row.embedding.length / 4,
-      )
-    : null;
-}

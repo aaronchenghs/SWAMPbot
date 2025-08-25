@@ -80,6 +80,3 @@ const Env = EnvRaw.transform((raw) => {
     TARGET_CHAT_ID_LIST,
   };
 });
-
-export type AppConfig = z.infer<typeof Env>;
-export const cfg: AppConfig = Env.parse(process.env);

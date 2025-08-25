@@ -26,7 +26,7 @@ export function helpMessage() {
     const usage = c.usage ? ` — \`${c.usage}\`` : '';
     return `• **${names}** — ${desc}${usage}`;
   });
-  return `Here’s what I can do:\n\n${lines.join('\n')}\n\nTip: mention me, then your command.`;
+  return `🔍 Here’s what I can do:\n\n${lines.join('\n')}\n\nTip: mention me, then your command.`;
 }
 
 /** Extract a command text from cleaned content, removing the bot name when present */
@@ -41,10 +41,10 @@ export function findCommand(text: string, ctx: any): Command | undefined {
   const first = (tokens[0] || '').toLowerCase();
 
   // Try explicit matcher first
-  for (const c of commands) {
-    if (typeof c.matches === 'function') {
+  for (const command of commands) {
+    if (typeof command.matches === 'function') {
       try {
-        if (c.matches(text, ctx as any)) return c;
+        if (command.matches(text, ctx as any)) return command;
       } catch {}
     }
   }

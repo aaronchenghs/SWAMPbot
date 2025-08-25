@@ -1,9 +1,8 @@
 import OpenAI from 'openai';
-import { OPENAI_MODEL } from '../constants';
 import { extractJson, heuristicIsQuestion } from '../utils';
 import { APP_CONFIG } from '../config';
 
-export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+export const openai = new OpenAI({ apiKey: APP_CONFIG.OPENAI_API_KEY });
 const MODEL = APP_CONFIG.OPENAI_MODEL;
 const MAXTOK_CLASSIFY = APP_CONFIG.OAI_MAXTOK_CLASSIFY;
 const MAXTOK_ANSWER = APP_CONFIG.OAI_MAXTOK_ANSWER;
