@@ -25,8 +25,8 @@ export function getRandomGreeting(friendName?: string, friendId?: string) {
 
 const DEDUP_LEADS = [
   'I think we covered this recently',
-  'Looks like we answered this already',
-  'We just discussed this',
+  'Looks like we might have answered this already',
+  'We just discussed that',
   'This was resolved earlier',
   'This came up recently',
   'We’ve got an earlier answer for this',

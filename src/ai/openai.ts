@@ -84,23 +84,21 @@ export async function answerFromHistoryDirect(
       {
         role: 'system',
         content:
-          'You detect duplicate questions by scanning RECENT MESSAGES and produce a concise recap.\n' +
-          'Only use information explicitly stated in RECENT MESSAGES. Do not invent facts.\n' +
+          'You detect duplicate Q&A by scanning RECENT MESSAGES and produce a concise recap.\n' +
+          'Rules:\n' +
+          '- Only set duplicate=true if at least ONE prior message clearly ANSWERS the question (not another question).\n' +
+          '- An answer is a yes/no or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
+          '- Do NOT cite the question itself as evidence.\n' +
+          '- Keep reply 1–3 short sentences with [index] citation(s), author, and date/time.\n' +
           'Return ONLY JSON (no prose) with keys exactly:\n' +
-          '{"duplicate": boolean, "confidence": number, "reply": string}',
+          '{"duplicate": boolean, "confidence": number, "reply": string, "evidence": number[]}',
       },
       {
         role: 'user',
         content:
           `QUESTION:\n${newMsg.slice(0, 500)}\n\n` +
           'RECENT MESSAGES (newest first):\n' +
-          list +
-          '\n\n' +
-          'Rules:\n' +
-          '- If any message clearly answers the question (e.g., says who/what/when OR a yes/no), set duplicate=true.\n' +
-          '- Include author/date in reply if possible.\n' +
-          '- Keep reply to 1–3 short sentences.\n' +
-          '- If not clearly answered, set duplicate=false and reply empty.',
+          list,
       },
     ],
     max_tokens: MAXTOK_ANSWER,
