@@ -25,7 +25,7 @@ export async function indexIncoming(m: MsgRow) {
  */
 export async function maybeAutoReply(
   newMsg: MsgRow,
-  post: (text: string, opts?: PostOptions) => Promise<void>,
+  post: (text: string) => Promise<void>,
 ) {
   const text = (newMsg.text || '').trim();
   if (!text || !QUESTION_REGEX.test(text)) return;
@@ -54,10 +54,6 @@ export async function maybeAutoReply(
   if (decision.duplicate && decision.confidence >= MIN_CONF && decision.reply) {
     const mention = formatMention(newMsg.authorId, newMsg.authorName);
     const lead = getRandomDeadupLead();
-    const threadAnchor = newMsg.parentId ?? newMsg.id;
-    console.log('threadAnchor', threadAnchor);
-    await post(`**🔔 ${mention} ${lead}:**\n${decision.reply}`, {
-      parentId: threadAnchor,
-    });
+    await post(`**🔔 ${mention} ${lead}:**\n${decision.reply}`);
   }
 }

@@ -5,22 +5,18 @@ import { APP_CONFIG } from './config';
 
 export type PostOptions = {
   parentId?: string;
+  quoteOfId?: string;
 };
 
 export async function postText(
   chatId: string,
   text: string,
-  opts?: PostOptions,
+  options?: PostOptions,
 ) {
-  const body: any = { groupId: chatId, text };
-  if (opts?.parentId) body.parentId = opts.parentId;
-
-  // DEBUG so you can confirm the payload actually includes parentId
-  console.log('POST /team-messaging/v1/posts body:', body);
-
-  const r = await platform.post(`/team-messaging/v1/posts`, body);
-  const j = await r.json();
-  console.log('Create post response:', j);
+  const body: any = { text };
+  if (options?.parentId) body.parentId = options.parentId;
+  if (options?.quoteOfId) body.quoteOfId = options.quoteOfId;
+  await platform.post(`/team-messaging/v1/chats/${chatId}/posts`, body);
 }
 
 export function formatMention(

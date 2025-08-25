@@ -8,7 +8,6 @@ import {
 } from '../webhookUtils';
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
 import { APP_CONFIG } from '../config';
-import { resolveDisplayName } from '../services/names.service';
 import { stripQuotedText } from '../utils';
 
 export const webhookRouter = Router();
@@ -193,7 +192,7 @@ async function tryAutoAnswer(n: NormalizedPost) {
       text: visible,
       parentId: n.parentId,
     },
-    (text: string, opts?: any) => postText(n.groupId as any, text, opts),
+    (text) => postText(n.groupId as any, text),
   );
 }
 
@@ -218,8 +217,7 @@ async function handleCommands(n: NormalizedPost) {
     creatorId: n.creatorId,
     creatorName: n.creatorName,
     parentPostId: n.parentId,
-    reply: (text: string, extra?: any) =>
-      postText(n.groupId as any, text, extra),
+    reply: (text: string) => postText(n.groupId as any, text),
   };
 
   const cmd = findCommand(cmdText.toLowerCase(), ctx);
