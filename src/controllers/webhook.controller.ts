@@ -33,7 +33,6 @@ webhookRouter.post('/', json(), async (req, res) => {
     if (!isTeamMessagingPostEvent(body)) return;
     const post = normalizePost(body);
     if (post.creatorId === BOT_ID) return; // ignore bot's own messages
-    console.log(post, BOT_ID);
 
     await indexMessage(post);
     if (wasBotMentioned(post)) {
@@ -82,6 +81,7 @@ function pickPostNode(body: AnyRecord): AnyRecord {
 }
 
 function normalizePost(raw: AnyRecord): NormalizedPost {
+  console.log('Normalizing post:', raw);
   const post = pickPostNode(raw);
 
   const id = String(post?.id ?? raw?.id ?? '');
@@ -178,7 +178,6 @@ async function tryAutoAnswer(n: NormalizedPost) {
 
 /** Handle the “mentioned/DM → commands only” branch */
 async function handleCommands(n: NormalizedPost) {
-  console.log(`Handling command from ${n.cleanText}`);
   // Strip mention text and split into args
   const cmdText = extractCommandText(n.cleanText);
   const args = cmdText.split(/\s+/).filter(Boolean);
