@@ -154,12 +154,8 @@ function normalizePost(raw: Record<string, any>): NormalizedPost {
 function wasBotMentioned(n: NormalizedPost): boolean {
   const isDirect = n.chatType === 'Direct';
   if (isDirect) return true;
-
   const mentionedById = n.mentions.some((m: any) => String(m?.id) === BOT_ID);
-  const nameMention = new RegExp(`\\b${APP_CONFIG.BOT_NAME}\\b`, 'i').test(
-    n.cleanText,
-  );
-  return mentionedById || nameMention;
+  return mentionedById;
 }
 
 async function indexMessage(n: NormalizedPost) {
