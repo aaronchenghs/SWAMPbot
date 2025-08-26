@@ -10,9 +10,11 @@ const TEMP_CLASSIFY = APP_CONFIG.OAI_TEMP_CLASSIFY;
 const TEMP_ANSWER = APP_CONFIG.OAI_TEMP_ANSWER;
 
 // ---- Small helpers ----
-function getContent(r: OpenAI.Chat.Completions.ChatCompletion): string {
-  if (!r?.choices?.length) return '';
-  return r.choices[0]?.message?.content ?? '';
+function getContent(
+  chatGPTResponse: OpenAI.Chat.Completions.ChatCompletion,
+): string {
+  if (!chatGPTResponse?.choices?.length) return '';
+  return chatGPTResponse.choices[0]?.message?.content ?? '';
 }
 
 // keep inputs modest to avoid length finishes
@@ -36,17 +38,17 @@ function buildList(
 
 // ---- Embeddings ----
 export async function embed(text: string): Promise<number[]> {
-  const r = await openai.embeddings.create({
+  const response = await openai.embeddings.create({
     model: 'text-embedding-3-small',
     input: text.slice(0, 4000),
   });
-  return r.data[0].embedding;
+  return response.data[0].embedding;
 }
 
 // ---- “Is this a question?” classifier → { isQuestion, reason } ----
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
-  const r = await openai.chat.completions.create({
+  const response = await openai.chat.completions.create({
     model: MODEL,
     messages: [
       {
@@ -62,7 +64,7 @@ export async function classifyQuestion(text: string) {
     stream: false,
   });
 
-  const json = extractJson(getContent(r));
+  const json = extractJson(getContent(response));
   if (json && typeof json.is_question !== 'undefined') {
     return {
       isQuestion: !!json.is_question,
@@ -87,9 +89,9 @@ export async function answerFromHistoryDirect(
           'You detect duplicate Q&A by scanning RECENT MESSAGES and produce a concise recap.\n' +
           'Rules:\n' +
           '- Only set duplicate=true if at least ONE prior message clearly ANSWERS the question (not another question).\n' +
-          '- An answer is a yes/no or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
+          '- An answer is a yes/no, implication of an answer, or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
           '- Do NOT cite the question itself as evidence.\n' +
-          '- Keep reply 1–3 short sentences.\n' +
+          '- Keep reply 1–4 concise sentences.\n' +
           '- The "reply" MUST include at least one [index] citation AND the author name AND date/time for a cited item, e.g. “… (Aug 24, 10:12 PM, Alice)”.\n' +
           '- After the timestamp, quote the actual message you got the answer from.\n' +
           'Return ONLY JSON (no prose) with keys exactly:\n' +

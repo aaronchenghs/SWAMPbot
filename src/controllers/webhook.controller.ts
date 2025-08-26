@@ -2,8 +2,8 @@ import { Router, json } from 'express';
 import { BOT_ID, MENTIONS_MARKUP_REGEX, QUESTION_REGEX } from '../constants';
 import {
   extractCommandText,
-  findCommand,
-  helpMessage,
+  lookUpCommand,
+  buildHelpMessage,
   postText,
 } from '../utils/webhookUtils';
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
@@ -212,7 +212,7 @@ async function handleCommands(post: NormalizedPost) {
 
   // Pure ping → help and return
   if (args.length === 0) {
-    await postText(post.groupId as any, helpMessage());
+    await postText(post.groupId as any, buildHelpMessage());
     return;
   }
 
@@ -228,9 +228,9 @@ async function handleCommands(post: NormalizedPost) {
     reply: (text: string) => postText(post.groupId as any, text),
   };
 
-  const cmd = findCommand(cmdText.toLowerCase(), ctx);
+  const cmd = lookUpCommand(cmdText.toLowerCase(), ctx);
   if (!cmd) {
-    await postText(post.groupId as any, helpMessage());
+    await postText(post.groupId as any, buildHelpMessage());
     return;
   }
 

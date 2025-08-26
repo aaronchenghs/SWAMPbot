@@ -1,5 +1,5 @@
 import { platform } from '../services/ringcentral.service';
-import type { RcId, MentionSpec, Command } from '../commands/types';
+import type { Command } from '../commands/types';
 import { commands } from '../commands';
 import { APP_CONFIG } from '../config';
 
@@ -31,14 +31,14 @@ export function formatMention(
 }
 
 /** Build a compact help message from registered commands */
-export function helpMessage() {
-  const lines = commands.map((c: Command) => {
-    const names = [c.name, ...(c.aliases || [])].join(', ');
-    const desc = c.description || '';
-    const usage = c.usage ? ` — \`${c.usage}\`` : '';
+export function buildHelpMessage() {
+  const lines = commands.map((command: Command) => {
+    const names = [command.name, ...(command.aliases || [])].join(', ');
+    const desc = command.description || '';
+    const usage = command.usage ? ` — \`${command.usage}\`` : '';
     return `• **${names}** — ${desc}${usage}`;
   });
-  return `🔍 Here’s what I can do:\n\n${lines.join('\n')}\n\nTip: mention me, then your command.`;
+  return `🔍 Here’s what I can do:\n\n${lines.join('\n')}\n\nTip: mention me, then your command (@SWAMPbot [command]).`;
 }
 
 /** Extract a command text from cleaned content, removing the bot name when present */
@@ -48,7 +48,7 @@ export function extractCommandText(cleanText: string): string {
 }
 
 /** Match a command: prefer c.matches(text, ctx); fallback to name/alias == first token */
-export function findCommand(text: string, ctx: any): Command | undefined {
+export function lookUpCommand(text: string, ctx: any): Command | undefined {
   const tokens = text.split(/\s+/).filter(Boolean);
   const first = (tokens[0] || '').toLowerCase();
 
@@ -62,8 +62,8 @@ export function findCommand(text: string, ctx: any): Command | undefined {
   }
   // Fallback: token match to name/aliases
   return commands.find(
-    (c) =>
-      c.name.toLowerCase() === first ||
-      (c.aliases || []).some((a) => a.toLowerCase() === first),
+    (command) =>
+      command.name.toLowerCase() === first ||
+      (command.aliases || []).some((a) => a.toLowerCase() === first),
   );
 }
