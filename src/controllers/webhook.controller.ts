@@ -154,6 +154,7 @@ function normalizePost(raw: Record<string, any>): NormalizedPost {
 function wasBotMentioned(n: NormalizedPost): boolean {
   const isDirect = n.chatType === 'Direct';
   if (isDirect) return true;
+  console.log(n.mentions);
   const mentionedById = n.mentions.some((m: any) => String(m?.id) === BOT_ID);
   return mentionedById;
 }
