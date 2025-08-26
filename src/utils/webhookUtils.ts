@@ -1,7 +1,7 @@
-import { platform } from './services/ringcentral.service';
-import type { RcId, MentionSpec, Command } from './commands/types';
-import { commands } from './commands';
-import { APP_CONFIG } from './config';
+import { platform } from '../services/ringcentral.service';
+import type { RcId, MentionSpec, Command } from '../commands/types';
+import { commands } from '../commands';
+import { APP_CONFIG } from '../config';
 
 export type PostOptions = {
   parentId?: string;

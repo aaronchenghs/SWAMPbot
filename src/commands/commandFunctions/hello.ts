@@ -1,5 +1,5 @@
 import { GREETING_REGEX } from '../../constants';
-import { getRandomGreeting } from '../../utils';
+import { getRandomGreeting } from '../../utils/generalUtils';
 import { Command } from '../types';
 
 export const helloCommand: Command = {

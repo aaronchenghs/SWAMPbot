@@ -63,8 +63,6 @@ export async function resolveDisplayName(
   mentions?: Array<{ id?: string; name?: string }>,
 ): Promise<string> {
   if (!personId) return 'friend';
-
-  // cache
   const cached = nameByPersonId.get(personId);
   if (cached) return cached;
 

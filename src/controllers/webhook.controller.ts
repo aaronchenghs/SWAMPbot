@@ -5,10 +5,10 @@ import {
   findCommand,
   helpMessage,
   postText,
-} from '../webhookUtils';
+} from '../utils/webhookUtils';
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
 import { APP_CONFIG } from '../config';
-import { stripQuotedText } from '../utils';
+import { stripQuotedText } from '../utils/generalUtils';
 import { resolveDisplayName } from '../services/names.service';
 
 export const webhookRouter = Router();

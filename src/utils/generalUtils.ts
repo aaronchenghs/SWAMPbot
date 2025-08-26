@@ -2,7 +2,7 @@ import {
   BLOCKQUOTE_REGEX,
   QUESTION_REGEX,
   RC_QUOTE_MARKUP_REGEX,
-} from './constants';
+} from '../constants';
 import { formatMention } from './webhookUtils';
 
 function pickFrom<T>(arr: readonly T[]): T {

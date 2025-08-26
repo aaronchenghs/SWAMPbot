@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { extractJson, heuristicIsQuestion } from '../utils';
+import { extractJson, heuristicIsQuestion } from '../utils/generalUtils';
 import { APP_CONFIG } from '../config';
 
 export const openai = new OpenAI({ apiKey: APP_CONFIG.OPENAI_API_KEY });

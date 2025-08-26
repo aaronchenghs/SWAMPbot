@@ -3,8 +3,9 @@ import { APP_CONFIG } from '../config';
 import { QUESTION_REGEX } from '../constants';
 import { resolveDisplayName } from '../services/names.service';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
-import { getRandomDeadupLead, isLikelyId } from '../utils';
-import { formatMention, PostOptions } from '../webhookUtils';
+import { getRandomDeadupLead, isLikelyId } from '../utils/generalUtils';
+import { formatWhen } from '../utils/timeUtils';
+import { formatMention, PostOptions } from '../utils/webhookUtils';
 
 const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
 const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
@@ -49,19 +50,25 @@ export async function maybeAutoReply(
       if (response.authorName && !isLikelyId(response.authorName)) {
         return {
           author: response.authorName,
-          when: new Date(response.createdAt).toLocaleString(),
+          when: formatWhen(response.createdAt),
           text: response.text,
         };
       }
 
       let name = response.authorName || 'unknown';
-      if (response.authorId)
-        name =
-          (await resolveDisplayName(response.authorId, newMsg.chatId)) || name;
+      if (response.authorId) {
+        const resolved = await resolveDisplayName(
+          response.authorId,
+          newMsg.chatId,
+        );
+        if (resolved) name = resolved;
+      }
+
+      const author = !isLikelyId(name) ? name : 'someone';
 
       return {
-        author: !isLikelyId(name) ? name : 'someone',
-        when: new Date(response.createdAt).toLocaleString(),
+        author,
+        when: formatWhen(response.createdAt),
         text: response.text,
       };
     }),
