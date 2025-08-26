@@ -9,6 +9,7 @@ import {
 import { indexIncoming, maybeAutoReply } from '../autoanswer/engine';
 import { APP_CONFIG } from '../config';
 import { stripQuotedText } from '../utils';
+import { resolveDisplayName } from '../services/names.service';
 
 export const webhookRouter = Router();
 
@@ -161,15 +162,23 @@ function wasBotMentioned(n: NormalizedPost): boolean {
   return mentionedById || nameMention;
 }
 
-/** Index the message into your history store (embeddings & text) */
 async function indexMessage(n: NormalizedPost) {
   const text = n.textNoQuotes || n.cleanText;
   if (!text) return;
+
+  let display = n.creatorName;
+  if (!display || /^\d{5,}$/.test(display)) {
+    display =
+      (await resolveDisplayName(n.creatorId, n.groupId, n.mentions)) ||
+      n.creatorName ||
+      '';
+  }
+
   await indexIncoming({
     id: n.id,
     chatId: n.groupId,
     authorId: n.creatorId,
-    authorName: n.creatorName,
+    authorName: display,
     createdAt: n.createdAt,
     text,
     parentId: n.parentId,

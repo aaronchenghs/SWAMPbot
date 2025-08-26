@@ -65,3 +65,5 @@ export function stripQuotedText(text: string): string {
     .replace(RC_QUOTE_MARKUP_REGEX, '')
     .trim();
 }
+
+export const isLikelyId = (text?: string) => !!text && /^\d{5,}$/.test(text);

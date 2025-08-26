@@ -1,8 +1,9 @@
 import { classifyQuestion, answerFromHistoryDirect, embed } from '../ai/openai';
 import { APP_CONFIG } from '../config';
 import { QUESTION_REGEX } from '../constants';
+import { resolveDisplayName } from '../services/names.service';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
-import { getRandomDeadupLead } from '../utils';
+import { getRandomDeadupLead, isLikelyId } from '../utils';
 import { formatMention, PostOptions } from '../webhookUtils';
 
 const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
@@ -39,16 +40,34 @@ export async function maybeAutoReply(
   const recent = recentInChat(newMsg.chatId, since);
   if (!recent.length) return;
 
-  // Build “history” for the model (newest first so [1] is most recent)
-  const history = recent
+  const rows = recent
     .filter((r) => r.id !== newMsg.id)
     .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 40)
-    .map((r) => ({
-      author: r.authorName || r.authorId || 'unknown',
-      when: new Date(r.createdAt).toLocaleString(),
-      text: r.text,
-    }));
+    .slice(0, 40);
+
+  const history = await Promise.all(
+    rows.map(async (response) => {
+      if (response.authorName && !isLikelyId(response.authorName)) {
+        return {
+          author: response.authorName,
+          when: new Date(response.createdAt).toLocaleString(),
+          text: response.text,
+        };
+      }
+
+      let name = response.authorName || 'unknown';
+      if (response.authorId) {
+        name =
+          (await resolveDisplayName(response.authorId, newMsg.chatId)) || name;
+      }
+
+      return {
+        author: !isLikelyId(name) ? name : 'someone',
+        when: new Date(response.createdAt).toLocaleString(),
+        text: response.text,
+      };
+    }),
+  );
 
   const decision = await answerFromHistoryDirect(text, history);
   if (decision.duplicate && decision.confidence >= MIN_CONF && decision.reply) {

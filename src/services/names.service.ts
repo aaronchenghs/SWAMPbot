@@ -20,10 +20,9 @@ async function fetchPersonName(personId: string): Promise<string | null> {
   try {
     const r = await platform.get(`/team-messaging/v1/persons/${personId}`);
     const json = await r.json();
-    const name: string =
-      json?.name || (json?.firstName && json?.lastName)
-        ? `${json.firstName} ${json.lastName}`.trim()
-        : '';
+    const name =
+      (json?.name as string | undefined) ??
+      [json?.firstName, json?.lastName].filter(Boolean).join(' ').trim();
     return name || null;
   } catch {
     return null;
