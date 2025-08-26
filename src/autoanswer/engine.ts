@@ -35,13 +35,12 @@ export async function maybeAutoReply(
   const cls = await classifyQuestion(text);
   if (!cls.isQuestion) return;
 
-  // Pull recent chat text
   const since = Date.now() - LOOKBACK_DAYS * 24 * 3600 * 1000;
   const recent = recentInChat(newMsg.chatId, since);
   if (!recent.length) return;
 
   const rows = recent
-    .filter((r) => r.id !== newMsg.id)
+    .filter((row) => row.id !== newMsg.id)
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, 40);
 
@@ -56,10 +55,9 @@ export async function maybeAutoReply(
       }
 
       let name = response.authorName || 'unknown';
-      if (response.authorId) {
+      if (response.authorId)
         name =
           (await resolveDisplayName(response.authorId, newMsg.chatId)) || name;
-      }
 
       return {
         author: !isLikelyId(name) ? name : 'someone',
