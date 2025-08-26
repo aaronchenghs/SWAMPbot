@@ -151,84 +151,86 @@ function normalizePost(raw: Record<string, any>): NormalizedPost {
 }
 
 /** Was the bot addressed? (DM, explicit mention entity, or name match) */
-function wasBotMentioned(n: NormalizedPost): boolean {
-  const isDirect = n.chatType === 'Direct';
-  if (isDirect) return true;
-  console.log(n.mentions);
-  const mentionedById = n.mentions.some((m: any) => String(m?.id) === BOT_ID);
-  return mentionedById;
+function wasBotMentioned(post: NormalizedPost): boolean {
+  const isDM = post.chatType === 'Direct';
+  if (isDM) return true;
+
+  const wasMentionedById = post.mentions.some(
+    (mention: any) => String(mention?.id) === BOT_ID,
+  );
+  return wasMentionedById;
 }
 
-async function indexMessage(n: NormalizedPost) {
-  const text = n.textNoQuotes || n.cleanText;
+async function indexMessage(post: NormalizedPost) {
+  const text = post.textNoQuotes || post.cleanText;
   if (!text) return;
 
-  let display = n.creatorName;
+  let display = post.creatorName;
   if (!display || /^\d{5,}$/.test(display)) {
     display =
-      (await resolveDisplayName(n.creatorId, n.groupId, n.mentions)) ||
-      n.creatorName ||
+      (await resolveDisplayName(post.creatorId, post.groupId, post.mentions)) ||
+      post.creatorName ||
       '';
   }
 
   await indexIncoming({
-    id: n.id,
-    chatId: n.groupId,
-    authorId: n.creatorId,
+    id: post.id,
+    chatId: post.groupId,
+    authorId: post.creatorId,
     authorName: display,
-    createdAt: n.createdAt,
+    createdAt: post.createdAt,
     text,
-    parentId: n.parentId,
+    parentId: post.parentId,
   });
 }
 
 /** Auto-answer (only in non-DM + not mentioned branch) */
-async function tryAutoAnswer(n: NormalizedPost) {
-  const visible = n.textNoQuotes || n.cleanText;
+async function tryAutoAnswer(post: NormalizedPost) {
+  const visible = post.textNoQuotes || post.cleanText;
   if (!visible) return;
-  if (n.hasQuote && !QUESTION_REGEX.test(visible)) return;
+  if (post.hasQuote && !QUESTION_REGEX.test(visible)) return;
 
   await maybeAutoReply(
     {
-      id: n.id,
-      chatId: n.groupId,
-      authorId: n.creatorId,
-      authorName: n.creatorName,
-      createdAt: n.createdAt,
+      id: post.id,
+      chatId: post.groupId,
+      authorId: post.creatorId,
+      authorName: post.creatorName,
+      createdAt: post.createdAt,
       text: visible,
-      parentId: n.parentId,
+      parentId: post.parentId,
     },
-    (text) => postText(n.groupId as any, text),
+    (text) => postText(post.groupId as any, text),
   );
 }
 
 /** Handle the “mentioned/DM → commands only” branch */
-async function handleCommands(n: NormalizedPost) {
+async function handleCommands(post: NormalizedPost) {
   // Strip mention text and split into args
-  const cmdText = extractCommandText(n.cleanText);
+  const cmdText = extractCommandText(post.cleanText);
   const args = cmdText.split(/\s+/).filter(Boolean);
 
   // Pure ping → help and return
   if (args.length === 0) {
-    await postText(n.groupId as any, helpMessage());
+    await postText(post.groupId as any, helpMessage());
     return;
   }
 
   const ctx: any = {
-    text: n.cleanText,
+    text: post.cleanText,
     cleanText: cmdText,
     args,
-    chatId: n.groupId,
-    chatType: n.chatType,
-    creatorId: n.creatorId,
-    creatorName: n.creatorName,
-    parentPostId: n.parentId,
-    reply: (text: string) => postText(n.groupId as any, text),
+    chatId: post.groupId,
+    chatType: post.chatType,
+    creatorId: post.creatorId,
+    creatorName: post.creatorName,
+    parentPostId: post.parentId,
+    reply: (text: string) => postText(post.groupId as any, text),
   };
 
   const cmd = findCommand(cmdText.toLowerCase(), ctx);
   if (!cmd) {
-    await postText(n.groupId as any, helpMessage());
+    await postText(post.groupId as any, helpMessage());
     return;
   }
 
@@ -237,7 +239,7 @@ async function handleCommands(n: NormalizedPost) {
   } catch (err: any) {
     console.error('command error:', err);
     await postText(
-      n.groupId as any,
+      post.groupId as any,
       `Whoops, that command hiccuped: ${err?.message || 'error'}`,
     );
   }
