@@ -82,3 +82,45 @@ export function stripQuotedText(text: string): string {
 }
 
 export const isLikelyId = (text?: string) => !!text && /^\d{5,}$/.test(text);
+
+export type Participant = { id?: string; name?: string; isBot?: boolean };
+
+function shuffle<T>(arr: T[]): void {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+export function pickWinners(
+  participants: Participant[],
+  requested: number,
+  opts?: { excludeIds?: string[]; includeBots?: boolean }
+) {
+  const { excludeIds = [], includeBots = false } = opts ?? {};
+
+  const exclude = new Set(excludeIds.map(String));
+  const seen = new Set<string>();
+
+  const pool = (participants ?? [])
+    .filter(p => p && (p.id || p.name))
+    .filter(p => includeBots ? true : !p?.isBot)
+    .filter(p => (p.id ? !exclude.has(String(p.id)) : true))
+    .filter(p => {
+      if (!p.id) return true;
+      if (seen.has(String(p.id))) return false;
+      seen.add(String(p.id));
+      return true;
+    });
+
+  if (pool.length === 0) {
+    return { winners: [] as Participant[], available: 0 };
+  }
+
+  shuffle(pool);
+
+  const count = Math.max(0, Math.min(requested, pool.length));
+  const winners = pool.slice(0, count);
+
+  return { winners, available: pool.length };
+}
