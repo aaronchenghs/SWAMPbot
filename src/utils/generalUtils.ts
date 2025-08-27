@@ -5,7 +5,7 @@ import {
 } from '../constants';
 import { formatMention } from './webhookUtils';
 
-function pickFrom<T>(arr: readonly T[]): T {
+export function pickFrom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
