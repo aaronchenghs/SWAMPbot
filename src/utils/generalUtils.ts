@@ -27,6 +27,21 @@ export function getRandomGreeting(friendName?: string, friendId?: string) {
   return pickFrom(quips);
 }
 
+export function getCoinFlip(friendName?: string, friendId?: string, flip?: string): string {
+  const name = formatMention(friendId, friendName);
+
+  const actualResult = Math.random() < 0.5 ? "Heads" : "Tails";
+
+  if (!flip) {
+    return `${name} flipped a coin and got ${actualResult}!`;
+  }
+
+  const guess = flip.toLowerCase();
+  const won = (guess === actualResult.toLowerCase());
+
+  return `${name} guessed ${flip}, the coin landed on ${actualResult}. ${won ? "Yippee woohoo 🎉" : "Boohoo you lost 😢"}`;
+}
+
 const DEDUP_LEADS = [
   'I think we covered this recently',
   'Looks like we might have answered this already',
