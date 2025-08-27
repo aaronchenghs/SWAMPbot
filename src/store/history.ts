@@ -4,6 +4,7 @@ import path from 'path';
 
 const DB_PATH =
   process.env.HISTORY_DB || path.join(process.cwd(), 'data', 'history.sqlite');
+console.log('Using DB path:', DB_PATH);
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 db.pragma('journal_mode = WAL');
