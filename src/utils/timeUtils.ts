@@ -12,7 +12,7 @@ const QUESTION_TIME_FORMAT = new Intl.DateTimeFormat('en-US', {
   timeZoneName: 'short',
 });
 
-export function formatWhen(input: number | string | Date): string {
+export function formatTime(input: number | string | Date): string {
   const date =
     typeof input === 'number' || typeof input === 'string'
       ? new Date(input)

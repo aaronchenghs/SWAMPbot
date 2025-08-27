@@ -4,20 +4,20 @@ import { QUESTION_REGEX } from '../constants';
 import { resolveDisplayName } from '../services/names.service';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
 import { getRandomDeadupLead, isLikelyId } from '../utils/generalUtils';
-import { formatWhen } from '../utils/timeUtils';
-import { formatMention, PostOptions } from '../utils/webhookUtils';
+import { formatTime } from '../utils/timeUtils';
+import { formatMention } from '../utils/webhookUtils';
 
 const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
 const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
 
 /** Index a message (text + embedding) for later recall */
-export async function indexIncoming(m: MsgRow) {
-  const t = (m.text || '').trim();
-  if (t.length >= 8) {
-    const v = await embed(t);
-    addMessage(m, v);
+export async function indexIncoming(message: MsgRow) {
+  const messageText = (message.text || '').trim();
+  if (messageText.length >= 8) {
+    const v = await embed(messageText);
+    addMessage(message, v);
   } else {
-    addMessage(m, new Array(1536).fill(0));
+    addMessage(message, new Array(1536).fill(0));
   }
 }
 
@@ -50,7 +50,7 @@ export async function maybeAutoReply(
       if (response.authorName && !isLikelyId(response.authorName)) {
         return {
           author: response.authorName,
-          when: formatWhen(response.createdAt),
+          when: formatTime(response.createdAt),
           text: response.text,
         };
       }
@@ -68,7 +68,7 @@ export async function maybeAutoReply(
 
       return {
         author,
-        when: formatWhen(response.createdAt),
+        when: formatTime(response.createdAt),
         text: response.text,
       };
     }),
