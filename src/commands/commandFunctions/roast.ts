@@ -16,7 +16,7 @@ export const roastCommand: Command = {
     return /^roast\b/i.test(cleaned);
   },
   async run(ctx) {
-    const text1 = ctx.cleanText;    
+    const text1 = ctx.text;    
 
     await ctx.reply(`🔥 ${text1}`);
   },
