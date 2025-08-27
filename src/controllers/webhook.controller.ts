@@ -42,6 +42,7 @@ webhookRouter.post('/', json(), async (req, res) => {
     await indexMessage(post);
     if (wasBotMentioned(post)) {
       await handleCommands(post);
+      console.log('Exiting webhook after handling command.');
       return;
     }
     await tryAutoAnswer(post);
@@ -209,6 +210,7 @@ async function tryAutoAnswer(post: NormalizedPost) {
 
 /** Handle the “mentioned/DM → commands only” branch */
 async function handleCommands(post: NormalizedPost) {
+  console.log('Handling command for post:', post);
   // Strip mention text and split into args
   const cmdText = extractCommandText(post.cleanText);
   const args = cmdText.split(/\s+/).filter(Boolean);
