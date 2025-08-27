@@ -27,19 +27,23 @@ export function getRandomGreeting(friendName?: string, friendId?: string) {
   return pickFrom(quips);
 }
 
-export function getCoinFlip(friendName?: string, friendId?: string, flip?: string): string {
+export function getCoinFlip(
+  friendName?: string,
+  friendId?: string,
+  flip?: string,
+): string {
   const name = formatMention(friendId, friendName);
 
-  const actualResult = Math.random() < 0.5 ? "Heads" : "Tails";
+  const actualResult = Math.random() < 0.5 ? 'Heads' : 'Tails';
 
   if (!flip) {
     return `${name} flipped a coin and got ${actualResult}!`;
   }
 
   const guess = flip.toLowerCase();
-  const won = (guess === actualResult.toLowerCase());
+  const won = guess === actualResult.toLowerCase();
 
-  return `${name} guessed ${flip}, the coin landed on ${actualResult}. ${won ? "Yippee woohoo 🎉" : "Boohoo you lost 😢"}`;
+  return `${name} guessed ${flip}, the coin landed on ${actualResult}. ${won ? 'Yippee woohoo 🎉' : 'Boohoo you lost 😢'}`;
 }
 
 const DEDUP_LEADS = [
@@ -95,7 +99,7 @@ function shuffle<T>(arr: T[]): void {
 export function pickWinners(
   participants: Participant[],
   requested: number,
-  opts?: { excludeIds?: string[]; includeBots?: boolean }
+  opts?: { excludeIds?: string[]; includeBots?: boolean },
 ) {
   const { excludeIds = [], includeBots = false } = opts ?? {};
 
@@ -103,10 +107,10 @@ export function pickWinners(
   const seen = new Set<string>();
 
   const pool = (participants ?? [])
-    .filter(p => p && (p.id || p.name))
-    .filter(p => includeBots ? true : !p?.isBot)
-    .filter(p => (p.id ? !exclude.has(String(p.id)) : true))
-    .filter(p => {
+    .filter((p) => p && (p.id || p.name))
+    .filter((p) => (includeBots ? true : !p?.isBot))
+    .filter((p) => (p.id ? !exclude.has(String(p.id)) : true))
+    .filter((p) => {
       if (!p.id) return true;
       if (seen.has(String(p.id))) return false;
       seen.add(String(p.id));

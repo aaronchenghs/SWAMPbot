@@ -26,7 +26,7 @@ const Env = z.object({
   OAI_TEMP_ANSWER: z.coerce.number().default(0.2),
 
   DEDUP_LOOKBACK_DAYS: z.coerce.number().default(7),
-  DEDUP_MIN_CONFIDENCE: z.coerce.number().default(0.65),
+  DEDUP_MIN_CONFIDENCE: z.coerce.number().default(0.6),
 });
 
 export const APP_CONFIG = Env.parse(process.env);
