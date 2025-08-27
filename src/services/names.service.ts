@@ -29,7 +29,9 @@ async function fetchPersonName(personId: string): Promise<string | null> {
   }
 }
 
-export async function ensureChatMembers(chatId: string): Promise<Map<string, string>> {
+export async function getChatMembers(
+  chatId: string,
+): Promise<Map<string, string>> {
   const existing = chatMembers.get(chatId);
   if (existing) return existing;
 
@@ -39,6 +41,7 @@ export async function ensureChatMembers(chatId: string): Promise<Map<string, str
       recordCount: '200',
     } as any);
     const json: MembersResponse = await r.json();
+    console.log('Fetched chat members:', json);
     for (const m of json.records || []) {
       if (m?.id) {
         const display = m.name || '';
@@ -51,7 +54,6 @@ export async function ensureChatMembers(chatId: string): Promise<Map<string, str
   } catch {}
 
   chatMembers.set(chatId, map);
-  console.log(`${map}`)
   return map;
 }
 
@@ -83,7 +85,7 @@ export async function resolveDisplayName(
 
   // member list for the chat (if provided)
   if (chatId) {
-    const members = await ensureChatMembers(chatId);
+    const members = await getChatMembers(chatId);
     const fromMembers = members.get(personId);
     if (fromMembers) {
       cacheName(personId, fromMembers);
