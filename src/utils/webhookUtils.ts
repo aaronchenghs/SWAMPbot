@@ -1,7 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { platform } from '../services/ringcentral.service';
 import type { Command } from '../commands/types';
 import { commands } from '../commands';
 import { APP_CONFIG } from '../config';
+import { openai } from '../ai/openai';
 
 export type PostOptions = {
   parentId?: string;
@@ -56,8 +58,10 @@ export function lookUpCommand(text: string, ctx: any): Command | undefined {
   for (const command of commands) {
     if (typeof command.matches === 'function') {
       try {
-        if (command.matches(text, ctx as any)) return command;
-      } catch {}
+        if (command.matches(text, ctx)) return command;
+      } catch {
+        console.error('Error in command matcher', command.name);
+      }
     }
   }
   // Fallback: token match to name/aliases
@@ -66,4 +70,30 @@ export function lookUpCommand(text: string, ctx: any): Command | undefined {
       command.name.toLowerCase() === first ||
       (command.aliases || []).some((a) => a.toLowerCase() === first),
   );
+}
+
+export async function embed(text: string): Promise<number[]> {
+  const response = await openai.embeddings.create({
+    model: 'text-embedding-3-small',
+    input: text.slice(0, 4000),
+  });
+  return response.data[0].embedding;
+}
+
+export function trim(s: string, max = 220) {
+  s = s || '';
+  if (s.length <= max) return s;
+  const head = s.slice(0, Math.floor(max * 0.7));
+  const tail = s.slice(-Math.floor(max * 0.25));
+  return `${head}\n...\n${tail}`;
+}
+
+export function buildList(
+  msgs: Array<{ author: string; when: string; text: string }>,
+  maxItems = 16,
+) {
+  const pruned = msgs.slice(0, maxItems);
+  return pruned
+    .map((m, i) => `[${i + 1}] ${m.when} — ${m.author}: ${trim(m.text)}`)
+    .join('\n');
 }

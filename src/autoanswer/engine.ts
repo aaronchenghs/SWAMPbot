@@ -1,11 +1,11 @@
-import { classifyQuestion, answerFromHistoryDirect, embed } from '../ai/openai';
+import { classifyQuestion, answerFromHistoryDirect } from '../ai/openai';
 import { APP_CONFIG } from '../config';
 import { QUESTION_REGEX } from '../constants';
 import { resolveDisplayName } from '../services/names.service';
 import { addMessage, recentInChat, type MsgRow } from '../store/history';
 import { getRandomDeadupLead, isLikelyId } from '../utils/generalUtils';
 import { formatTime } from '../utils/timeUtils';
-import { formatMention } from '../utils/webhookUtils';
+import { embed, formatMention } from '../utils/webhookUtils';
 
 const LOOKBACK_DAYS = APP_CONFIG.DEDUP_LOOKBACK_DAYS;
 const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
@@ -14,8 +14,8 @@ const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
 export async function indexIncoming(message: MsgRow) {
   const messageText = (message.text || '').trim();
   if (messageText.length >= 8) {
-    const v = await embed(messageText);
-    addMessage(message, v);
+    const embeddedMessage = await embed(messageText);
+    addMessage(message, embeddedMessage);
   } else {
     addMessage(message, new Array(1536).fill(0));
   }

@@ -5,6 +5,8 @@ import {
   pickFrom,
 } from '../utils/generalUtils';
 import { APP_CONFIG } from '../config';
+import { ROAST_FALLBACKS } from '../constants';
+import { buildList, trim } from '../utils/webhookUtils';
 
 export const openai = new OpenAI({ apiKey: APP_CONFIG.OPENAI_API_KEY });
 const MODEL = APP_CONFIG.OPENAI_MODEL;
@@ -13,43 +15,17 @@ const MAXTOK_ANSWER = APP_CONFIG.OAI_MAXTOK_ANSWER;
 const TEMP_CLASSIFY = APP_CONFIG.OAI_TEMP_CLASSIFY;
 const TEMP_ANSWER = APP_CONFIG.OAI_TEMP_ANSWER;
 
-function getContent(
+function getResponseContent(
   chatGPTResponse: OpenAI.Chat.Completions.ChatCompletion,
 ): string {
   if (!chatGPTResponse?.choices?.length) return '';
   return chatGPTResponse.choices[0]?.message?.content ?? '';
 }
 
-function trim(s: string, max = 220) {
-  s = s || '';
-  if (s.length <= max) return s;
-  const head = s.slice(0, Math.floor(max * 0.7));
-  const tail = s.slice(-Math.floor(max * 0.25));
-  return `${head}\n...\n${tail}`;
-}
-
-function buildList(
-  msgs: Array<{ author: string; when: string; text: string }>,
-  maxItems = 16,
-) {
-  const pruned = msgs.slice(0, maxItems);
-  return pruned
-    .map((m, i) => `[${i + 1}] ${m.when} — ${m.author}: ${trim(m.text)}`)
-    .join('\n');
-}
-
-export async function embed(text: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
-    model: 'text-embedding-3-small',
-    input: text.slice(0, 4000),
-  });
-  return response.data[0].embedding;
-}
-
 // ---- “Is this a question?” classifier → { isQuestion, reason } ----
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
-  const r = await openai.chat.completions.create({
+  const response = await openai.chat.completions.create({
     model: MODEL,
     messages: [
       {
@@ -65,7 +41,7 @@ export async function classifyQuestion(text: string) {
     stream: false,
   });
 
-  const json = extractJson(getContent(r));
+  const json = extractJson(getResponseContent(response));
   if (json && typeof json.is_question !== 'undefined') {
     return {
       isQuestion: !!json.is_question,
@@ -117,26 +93,13 @@ export async function answerFromHistoryDirect(
     stream: false,
   });
 
-  const json = extractJson(getContent(response)) || {};
+  const json = extractJson(getResponseContent(response)) || {};
   return {
     duplicate: !!json.duplicate,
     confidence: Number(json.confidence ?? 0),
     reply: String(json.reply || ''),
   };
 }
-
-const ROAST_FALLBACKS = [
-  '{target}, I’ve seen 404 pages with more direction.',
-  '{target}, your code has more bugs than a nature documentary.',
-  "{target}, if procrastination were a sport, you'd miss the signup deadline.",
-  "{target}, your 'quick fix' just opened a portal to production issues.",
-  '{target}, even your rubber duck asked for a reassignment.',
-  '{target}, you’re the human equivalent of a missing semicolon in prod.',
-  '{target}, I’d explain it to you, but I left my crayons at home.',
-  '{target}, your confidence is inversely proportional to your unit tests.',
-  '{target}, I’ve met commit messages with more clarity.',
-  '{target}, if common sense were RAM, you’d be out of memory.',
-];
 
 /**
  * Generate a single PG roast line for a target.
@@ -180,13 +143,10 @@ export async function generateRoast(
       stream: false,
     });
 
-    const line = getContent(response).trim();
+    const line = getResponseContent(response).trim();
     if (line) return line;
-
-    // Fallback to a local line if the model returned nothing
     return pickFrom(ROAST_FALLBACKS).replace('{target}', target ?? 'Curtis');
   } catch {
-    // Network / API error fallback
     return pickFrom(ROAST_FALLBACKS).replace('{target}', target ?? 'Curtis');
   }
 }

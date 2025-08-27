@@ -1,5 +1,7 @@
 import {
   BLOCKQUOTE_REGEX,
+  MENTION_ID_REGEX,
+  NAME_REGEX,
   QUESTION_REGEX,
   RC_QUOTE_MARKUP_REGEX,
 } from '../constants';
@@ -59,16 +61,20 @@ export function getRandomDeadupLead(): string {
   return pickFrom(DEDUP_LEADS);
 }
 
-export function extractJson(text: string): any {
+export function extractJson(text: string) {
   try {
     return JSON.parse(text);
-  } catch {}
+  } catch {
+    console.error('Failed to parse JSON directly');
+  }
   const a = text.indexOf('{'),
     b = text.lastIndexOf('}');
   if (a !== -1 && b !== -1 && b > a) {
     try {
       return JSON.parse(text.slice(a, b + 1));
-    } catch {}
+    } catch {
+      console.error('Failed to parse JSON directly');
+    }
   }
   return {};
 }
@@ -117,9 +123,7 @@ export function pickWinners(
       return true;
     });
 
-  if (pool.length === 0) {
-    return { winners: [] as Participant[], available: 0 };
-  }
+  if (pool.length === 0) return { winners: [] as Participant[], available: 0 };
 
   shuffle(pool);
 
@@ -127,4 +131,21 @@ export function pickWinners(
   const winners = pool.slice(0, count);
 
   return { winners, available: pool.length };
+}
+
+export function extractTaggedTarget(
+  text: string,
+): { mention: string; id?: string } | null {
+  const idMatch = text.match(MENTION_ID_REGEX);
+  if (idMatch) {
+    const id = String(idMatch[1]);
+    return { mention: `<@${id}>`, id };
+  }
+
+  const nameMatch = text.match(NAME_REGEX);
+  if (nameMatch) {
+    return { mention: `@${nameMatch[1]}` };
+  }
+
+  return null;
 }
