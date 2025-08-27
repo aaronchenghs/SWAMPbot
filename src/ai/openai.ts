@@ -52,6 +52,29 @@ export async function embed(text: string): Promise<number[]> {
 // ---- “Is this a question?” classifier → { isQuestion, reason } ----
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
+  const r = await openai.chat.completions.create({
+    model: MODEL,
+    messages: [
+      {
+        role: 'system',
+        content:
+          'Return ONLY a compact JSON object with keys exactly: ' +
+          '{"is_question": boolean, "reason": string}. No other text.',
+      },
+      { role: 'user', content: `Text:\n${text.slice(0, 700)}` },
+    ],
+    max_tokens: MAXTOK_CLASSIFY,
+    temperature: TEMP_CLASSIFY,
+    stream: false,
+  });
+
+  const json = extractJson(getContent(r));
+  if (json && typeof json.is_question !== 'undefined') {
+    return {
+      isQuestion: !!json.is_question,
+      reason: String(json.reason || ''),
+    };
+  }
   return { isQuestion: fallback, reason: 'heuristic fallback' };
 }
 
