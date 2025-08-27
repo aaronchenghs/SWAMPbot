@@ -5,7 +5,7 @@ import { flipCommand } from './commandFunctions/flip';
 import { lotteryCommand } from './commandFunctions/lottery';
 import { Command } from './types';
 
-const _commands: Command[] = [helloCommand, pingCommand, flipCommand, ];
+const _commands: Command[] = [helloCommand, pingCommand, flipCommand, lotteryCommand];
 const help = createHelpCommand(() => _commands);
 
 export const commands: Command[] = [..._commands, help];
