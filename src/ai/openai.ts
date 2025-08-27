@@ -100,3 +100,73 @@ export async function answerFromHistoryDirect(
     reply: String(json.reply || ''),
   };
 }
+
+function randFrom<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+const ROAST_FALLBACKS = [
+  "{target}, I’ve seen 404 pages with more direction.",
+  "{target}, your code has more bugs than a nature documentary.",
+  "{target}, if procrastination were a sport, you'd miss the signup deadline.",
+  "{target}, your 'quick fix' just opened a portal to production issues.",
+  "{target}, even your rubber duck asked for a reassignment.",
+  "{target}, you’re the human equivalent of a missing semicolon in prod.",
+  "{target}, I’d explain it to you, but I left my crayons at home.",
+  "{target}, your confidence is inversely proportional to your unit tests.",
+  "{target}, I’ve met commit messages with more clarity.",
+  "{target}, if common sense were RAM, you’d be out of memory.",
+];
+
+/**
+ * Generate a single PG roast line for a target.
+ * Pass a RingCentral mention (e.g., "<@12345>") or a plain name.
+ * @param target - e.g., "<@12345>" or "Taylor"
+ * @param opts.style - "gentle" | "spicy" (defaults to "gentle")
+ * @param opts.topic - optional context to flavor the roast (short text)
+ */
+export async function generateRoast(
+  target: string,
+  opts?: { style?: "gentle" | "spicy"; topic?: string }
+): Promise<string> {
+  const style = opts?.style ?? "gentle";
+  const topic = opts?.topic ? trim(opts.topic, 220) : "";
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a playful roast generator for a friendly group chat. " +
+            "Rules: Keep it PG-rated, no profanity, no slurs, no references to protected classes " +
+            "(race, religion, gender, sexual orientation, disability, etc.), no threats, no doxxing. " +
+            "Keep it light and humorous. 1 sentence only. Address the target directly. " +
+            "Output ONLY the roast line; do not add quotes or extra commentary.",
+        },
+        {
+          role: "user",
+          content:
+            `Target: ${target}\n` +
+            (topic ? `Context: ${topic}\n` : "") +
+            `Style: ${style}\n` +
+            "Write exactly one witty roast line that mentions the target. " +
+            "If you use a placeholder, replace it with the target string directly.",
+        },
+      ],
+      max_tokens: Math.min(80, Number(MAXTOK_ANSWER ?? 120)),
+      temperature: Number(TEMP_ANSWER ?? 0.8),
+      stream: false,
+    });
+
+    const line = getContent(response).trim();
+    if (line) return line;
+
+    // Fallback to a local line if the model returned nothing
+    return randFrom(ROAST_FALLBACKS).replace("{target}", target);
+  } catch {
+    // Network / API error fallback
+    return randFrom(ROAST_FALLBACKS).replace("{target}", target);
+  }
+}
