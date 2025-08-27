@@ -87,11 +87,11 @@ export async function answerFromHistoryDirect(
       {
         role: 'system',
         content:
-          'You detect duplicate Q&A by scanning RECENT MESSAGES and produce a concise recap.\n' +
+          'You detect questions that have already been answered by scanning RECENT MESSAGES from the group chat and produce a concise recap.\n' +
           'Rules:\n' +
           '- Only set duplicate=true if at least ONE prior message clearly ANSWERS the question (not another question).\n' +
-          '- An answer is a yes/no, implication of an answer, or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
-          '- Do NOT cite the question itself as evidence.\n' +
+          '- An answer from the history may be a yes/no, implication of an answer, or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
+          '- Do NOT cite the original question itself as evidence.\n' +
           '- Keep reply 1–4 concise sentences.\n' +
           '- The "reply" MUST include at least one [index] citation AND the author name AND date/time for a cited item, e.g. “… (Aug 24, 10:12 PM, Alice)”.\n' +
           '- After the timestamp, quote the actual message you got the answer from.\n' +

@@ -42,7 +42,6 @@ webhookRouter.post('/', json(), async (req, res) => {
     await indexMessage(post);
     if (wasBotMentioned(post)) {
       await handleCommands(post);
-      console.log('Exiting webhook after handling command.');
       return;
     }
     await tryAutoAnswer(post);
