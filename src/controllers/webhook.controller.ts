@@ -14,7 +14,6 @@ import { resolveDisplayName } from '../services/names.service';
 export const webhookRouter = Router();
 
 webhookRouter.post('/', json(), async (req, res) => {
-  console.log('Webhook received:', req.body);
   // Subscription API handshake (not used if you set webhooks in console)
   const validation = req.get('Validation-Token');
   if (validation) {
