@@ -29,12 +29,14 @@ export const roastCommand: Command = {
     const targetObj = extractTaggedTarget(ctx.text || '');
     const target = targetObj?.mention;
 
+    const text = ctx.text;
+
     // if (!target) {
     //   await ctx.reply('Usage: roast <@id> or roast @Name — tag someone to roast.');
     //   return;
     // }
 
-    const line = await generateRoast(target, { style: 'spicy' });
+    const line = await generateRoast(text, { style: 'spicy' });
     await ctx.reply(`🔥 ${line}`);
   },
 };
