@@ -1,6 +1,7 @@
 // commands/lottery.ts
 import { Command } from '../types';
-import { ensureChatMembers } from '../../services/names.service';
+import { getChatMembers } from '../../services/names.service';
+import { PICK_REGEX } from '../../constants';
 // If you already have a formatter, import it. Otherwise, inline:
 function formatMention(id?: string, name?: string) {
   return id ? `<@${id}>` : (name ?? 'someone');
@@ -9,8 +10,8 @@ function formatMention(id?: string, name?: string) {
 type Ctx = {
   text: string;
   reply: (msg: string) => Promise<void>;
-  chatId?: string;           // ensure this is set in your middleware
-  conversationId?: string;   // fallback name in some setups
+  chatId?: string; // ensure this is set in your middleware
+  conversationId?: string; // fallback name in some setups
   botId?: string;
 };
 
@@ -23,12 +24,12 @@ function shuffle<T>(arr: T[]): void {
 
 export const lotteryCommand: Command = {
   name: 'pick',
-  description: 'Randomly pick N winners from this chat. Usage: "pick 3"',
+  description: 'Randomly pick N winners from this chat',
   usage: 'pick {number}',
   matches: (text) => text.toLowerCase().startsWith('pick'),
   async run(ctx: Ctx) {
     // 1) Parse "pick {number}"
-    const m = ctx.text.match(/^\s*pick\s+(\d+)\s*$/i);
+    const m = ctx.text.match(PICK_REGEX);
     if (!m) {
       await ctx.reply('Usage: pick {number} — e.g., "pick 3"');
       return;
@@ -47,15 +48,18 @@ export const lotteryCommand: Command = {
     }
 
     // 3) Use your working function to get the members map (id -> displayName)
-    const membersMap = await ensureChatMembers(chatId);
+    const membersMap = await getChatMembers(chatId);
 
     // Build the pool from the map
-    let pool = Array.from(membersMap.entries()).map(([id, name]) => ({ id, name }));
+    let pool = Array.from(membersMap.entries()).map(([id, name]) => ({
+      id,
+      name,
+    }));
 
     // 4) Exclude ONLY the bot so DMs still work (user remains eligible)
     if (ctx.botId) {
       const botId = String(ctx.botId);
-      pool = pool.filter(p => String(p.id) !== botId);
+      pool = pool.filter((p) => String(p.id) !== botId);
     }
 
     if (pool.length === 0) {
@@ -66,7 +70,8 @@ export const lotteryCommand: Command = {
     // 5) Shuffle and pick
     shuffle(pool);
     const count = Math.min(requested, pool.length);
-    const cappedNote = requested > pool.length ? ` (only ${pool.length} available)` : '';
+    const cappedNote =
+      requested > pool.length ? ` (only ${pool.length} available)` : '';
     const winners = pool.slice(0, count);
 
     // 6) Reply
@@ -75,7 +80,7 @@ export const lotteryCommand: Command = {
       .join('\n');
 
     await ctx.reply(
-      `🎟️ Lottery time! Picking ${count} winner${count > 1 ? 's' : ''}${cappedNote}:\n${list}\n\nYippee woohoo to the winners!`
+      `🎟️ Lottery time! Picking ${count} winner${count > 1 ? 's' : ''}${cappedNote}:\n${list}\n\nYippee woohoo to the winners!`,
     );
   },
 };
