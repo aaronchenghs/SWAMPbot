@@ -30,51 +30,28 @@ async function fetchPersonName(personId: string): Promise<string | null> {
 }
 
 export async function ensureChatMembers(chatId: string): Promise<Map<string, string>> {
-  const tag = '[ensureChatMembers]';
-
-  console.log(`${tag} called with chatId=${chatId}`);
-
   const existing = chatMembers.get(chatId);
-  if (existing) {
-    console.log(`${tag} cache HIT for chatId=${chatId}; size=${existing.size}`);
-    return existing;
-  }
-
-  console.log(`${tag} cache MISS for chatId=${chatId}; fetching members...`);
+  if (existing) return existing;
 
   const map = new Map<string, string>();
   try {
     const r = await platform.get(`/team-messaging/v1/chats/${chatId}/members`, {
       recordCount: '200',
     } as any);
-
     const json: MembersResponse = await r.json();
-    const total = Array.isArray(json?.records) ? json.records.length : 0;
-    console.log(`${tag} fetched records: ${total}`);
-
-    let added = 0;
     for (const m of json.records || []) {
       if (m?.id) {
-        const id = String(m.id);
         const display = m.name || '';
         if (display) {
-          map.set(id, display);
-          cacheName(id, display);
-          added++;
-        } else {
-          console.log(`${tag} member ${id} has no display name; skipping`);
+          map.set(String(m.id), display);
+          cacheName(String(m.id), display);
         }
-      } else {
-        console.log(`${tag} encountered record without id; skipping`);
       }
     }
-    console.log(`${tag} added ${added} members to map`);
-  } catch (e) {
-    console.error(`${tag} ERROR fetching members for chatId=${chatId}`, e);
-  }
+  } catch {}
 
   chatMembers.set(chatId, map);
-  console.log(`${tag} cached map for chatId=${chatId}; size=${map.size}`);
+  console.log(`${map}`)
   return map;
 }
 
