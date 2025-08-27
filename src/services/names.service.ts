@@ -35,24 +35,47 @@ export async function ensureChatMembers(chatId: string): Promise<Map<string, str
 
   const map = new Map<string, string>();
   try {
-    const r = await platform.get(`/team-messaging/v1/chats/${chatId}/members`, {
-      recordCount: '200',
-    } as any);
-    const json: MembersResponse = await r.json();
-    for (const m of json.records || []) {
+    const conversationResponse = await platform.get(`/team-messaging/v1/conversations/${chatId}`);
+    const conversationJson: ConversationResponse = await conversationResponse.json();
+
+    const members = conversationJson?.members || [];
+    
+    for (const m of members) {
       if (m?.id) {
-        const display = m.name || '';
-        if (display) {
-          map.set(String(m.id), display);
-          cacheName(String(m.id), display);
+        try {
+          const personResponse = await platform.get(`/team-messaging/v1/persons/${m.id}`);
+          const personJson: PersonResponse = await personResponse.json();
+          const display = personJson.name || '';
+          
+          if (display) {
+            map.set(String(m.id), display);
+            cacheName(String(m.id), display);
+          }
+        } catch (personError) {
+          console.error(`Error fetching person details for ID ${m.id}:`, personError);
         }
       }
     }
-  } catch {}
+  } catch (conversationError) {
+    console.error(`Error fetching conversation members for chat ID ${chatId}:`, conversationError);
+    return new Map<string, string>();
+  }
 
   chatMembers.set(chatId, map);
-  console.log(`${map}`)
+  console.log(`${map}`);
   return map;
+}
+
+// Example of the expected API response types (you will need to define these)
+interface ConversationResponse {
+  id: string;
+  members: { id: string }[];
+  name: string;
+}
+
+interface PersonResponse {
+  id: string;
+  name: string;
 }
 
 /**
