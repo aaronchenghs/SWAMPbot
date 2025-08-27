@@ -210,7 +210,6 @@ async function tryAutoAnswer(post: NormalizedPost) {
 
 /** Handle the “mentioned/DM → commands only” branch */
 async function handleCommands(post: NormalizedPost) {
-  console.log('Handling command for post:', post);
   // Strip mention text and split into args
   const cmdText = extractCommandText(post.cleanText);
   const args = cmdText.split(/\s+/).filter(Boolean);

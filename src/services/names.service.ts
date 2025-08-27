@@ -41,7 +41,6 @@ export async function getChatMembers(
       recordCount: '200',
     } as any);
     const json: MembersResponse = await r.json();
-    console.log('Fetched chat members:', json);
     for (const m of json.records || []) {
       if (m?.id) {
         const display = m.name || '';
