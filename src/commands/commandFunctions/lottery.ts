@@ -1,19 +1,16 @@
+// commands/lottery.ts
 import { Command } from '../types';
-import { Participant} from '../../utils/generalUtils';
-import { formatMention } from '../../utils/webhookUtils';
-
-type RCPlatform = {
-  get: (url: string) => Promise<{ json: () => Promise<any> }>;
-};
+import { ensureChatMembers } from '../../services/names.service';
+// If you already have a formatter, import it. Otherwise, inline:
+function formatMention(id?: string, name?: string) {
+  return id ? `<@${id}>` : (name ?? 'someone');
+}
 
 type Ctx = {
   text: string;
   reply: (msg: string) => Promise<void>;
-  rc?: RCPlatform;
-  chatId?: string;
-  conversationId?: string;
-  participants?: Participant[];
-  creatorId?: string;
+  chatId?: string;           // ensure this is set in your middleware
+  conversationId?: string;   // fallback name in some setups
   botId?: string;
 };
 
@@ -24,90 +21,59 @@ function shuffle<T>(arr: T[]): void {
   }
 }
 
-async function fetchParticipantsFromRingCentral(ctx: Ctx): Promise<Participant[]> {
-  const platform = ctx.rc;
-  const convId = ctx.chatId || ctx.conversationId;
-  if (!platform || !convId) return [];
-
-  const convRes = await platform.get(`/restapi/v1.0/glip/conversations/${convId}`);
-  const conv = await convRes.json();
-  const memberIds: string[] = Array.isArray(conv?.members)
-    ? conv.members.map((m: any) => String(m?.id)).filter(Boolean)
-    : [];
-
-  if (memberIds.length === 0) return [];
-
-  try {
-    const idsParam = memberIds.join(',');
-    const personsRes = await platform.get(`/restapi/v1.0/glip/persons?ids=${encodeURIComponent(idsParam)}`);
-    const persons = await personsRes.json();
-
-    const byId: Record<string, any> = {};
-    for (const p of persons?.records ?? []) byId[String(p.id)] = p;
-
-    return memberIds.map(id => {
-      const p = byId[id];
-      const name = p ? [p.firstName, p.lastName].filter(Boolean).join(' ') || p.email || undefined : undefined;
-      return { id, name };
-    });
-  } catch {
-    return memberIds.map(id => ({ id }));
-  }
-}
-
-async function getParticipantPool(ctx: Ctx): Promise<Participant[]> {
-  const fromCtx = (ctx.participants ?? []).filter(p => p && (p.id || p.name));
-  if (fromCtx.length > 0) return fromCtx;
-
-  return await fetchParticipantsFromRingCentral(ctx);
-}
-
 export const lotteryCommand: Command = {
   name: 'pick',
-  description: 'Randomly pick N winners from this group chat. Usage: "pick 3"',
+  description: 'Randomly pick N winners from this chat. Usage: "pick 3"',
   usage: 'pick {number}',
-  matches: (text: string) => text.toLowerCase().startsWith('pick'),
+  matches: (text) => text.toLowerCase().startsWith('pick'),
   async run(ctx: Ctx) {
+    // 1) Parse "pick {number}"
     const m = ctx.text.match(/^\s*pick\s+(\d+)\s*$/i);
     if (!m) {
       await ctx.reply('Usage: pick {number} — e.g., "pick 3"');
       return;
     }
-
     const requested = parseInt(m[1], 10);
     if (!Number.isFinite(requested) || requested <= 0) {
       await ctx.reply('Please provide a positive number of winners to pick.');
       return;
     }
 
-    let pool = await getParticipantPool(ctx);
+    // 2) Figure out the chat id your ensureChatMembers expects
+    const chatId = ctx.chatId ?? ctx.conversationId;
+    if (!chatId) {
+      await ctx.reply('I could not determine this chat id.');
+      return;
+    }
 
-    const exclude = new Set([ctx.botId, ctx.creatorId].filter(Boolean).map(String));
-    pool = pool
-      .filter(p => p && (p.id || p.name))
-      .filter(p => (p.id ? !exclude.has(String(p.id)) : true));
+    // 3) Use your working function to get the members map (id -> displayName)
+    const membersMap = await ensureChatMembers(chatId);
 
-    const seen = new Set<string>();
-    pool = pool.filter(p => {
-      if (!p.id) return true;
-      const key = String(p.id);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+    // Build the pool from the map
+    let pool = Array.from(membersMap.entries()).map(([id, name]) => ({ id, name }));
+
+    // 4) Exclude ONLY the bot so DMs still work (user remains eligible)
+    if (ctx.botId) {
+      const botId = String(ctx.botId);
+      pool = pool.filter(p => String(p.id) !== botId);
+    }
 
     if (pool.length === 0) {
       await ctx.reply("I couldn't find anyone to pick from in this chat.");
       return;
     }
 
+    // 5) Shuffle and pick
+    shuffle(pool);
     const count = Math.min(requested, pool.length);
     const cappedNote = requested > pool.length ? ` (only ${pool.length} available)` : '';
-
-    shuffle(pool);
     const winners = pool.slice(0, count);
 
-    const list = winners.map((p, i) => `${i + 1}. ${formatMention(p.id, p.name)}`).join('\n');
+    // 6) Reply
+    const list = winners
+      .map((p, i) => `${i + 1}. ${formatMention(p.id, p.name)}`)
+      .join('\n');
+
     await ctx.reply(
       `🎟️ Lottery time! Picking ${count} winner${count > 1 ? 's' : ''}${cappedNote}:\n${list}\n\nYippee woohoo to the winners!`
     );

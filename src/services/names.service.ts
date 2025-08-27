@@ -29,7 +29,7 @@ async function fetchPersonName(personId: string): Promise<string | null> {
   }
 }
 
-async function ensureChatMembers(chatId: string): Promise<Map<string, string>> {
+export async function ensureChatMembers(chatId: string): Promise<Map<string, string>> {
   const existing = chatMembers.get(chatId);
   if (existing) return existing;
 
