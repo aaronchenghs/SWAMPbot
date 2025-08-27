@@ -22,8 +22,8 @@ const Env = z.object({
   OPENAI_API_KEY: z.string().min(1),
   OAI_MAXTOK_CLASSIFY: z.coerce.number().default(96),
   OAI_MAXTOK_ANSWER: z.coerce.number().default(384),
-  OAI_TEMP_CLASSIFY: z.coerce.number().default(0.2),
-  OAI_TEMP_ANSWER: z.coerce.number().default(0.2),
+  OAI_TEMP_CLASSIFY: z.coerce.number().default(0.6),
+  OAI_TEMP_ANSWER: z.coerce.number().default(0.6),
 
   DEDUP_LOOKBACK_DAYS: z.coerce.number().default(7),
   DEDUP_MIN_CONFIDENCE: z.coerce.number().default(0.6),

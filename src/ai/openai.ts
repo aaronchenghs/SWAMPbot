@@ -13,7 +13,6 @@ const MAXTOK_ANSWER = APP_CONFIG.OAI_MAXTOK_ANSWER;
 const TEMP_CLASSIFY = APP_CONFIG.OAI_TEMP_CLASSIFY;
 const TEMP_ANSWER = APP_CONFIG.OAI_TEMP_ANSWER;
 
-// ---- Small helpers ----
 function getContent(
   chatGPTResponse: OpenAI.Chat.Completions.ChatCompletion,
 ): string {
@@ -21,7 +20,6 @@ function getContent(
   return chatGPTResponse.choices[0]?.message?.content ?? '';
 }
 
-// keep inputs modest to avoid length finishes
 function trim(s: string, max = 220) {
   s = s || '';
   if (s.length <= max) return s;
@@ -40,7 +38,6 @@ function buildList(
     .join('\n');
 }
 
-// ---- Embeddings ----
 export async function embed(text: string): Promise<number[]> {
   const response = await openai.embeddings.create({
     model: 'text-embedding-3-small',
