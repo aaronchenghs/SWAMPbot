@@ -1,45 +1,40 @@
 import { Command } from '../types';
 import { generateRoast } from '../../ai/openai';
 
-function stripLeadingMentions(s: string) {
-  // Removes one or more leading mentions like "<@id>" or "@Name" (no assumption on platform)
-  return s.replace(/^(\s*(<@[^>]+>|@\S+))+/, '').trim();
-}
-
-export const roastCommand: Command = {
-  name: 'roast',
-  description: 'Roast a tagged user',
-  usage: 'roast',
-  // Allow "@Bot roast ..." or "roast ..."
-  matches: (text) => {
-    const cleaned = stripLeadingMentions(text || '');
-    return /^roast\b/i.test(cleaned);
-  },
-  async run(ctx) {
-    const text1 = ctx.text;    
-
-    await ctx.reply(`🔥 ${text1}`);
-  },
-};
-
-function extractTaggedTargetLoose(text: string): { mention: string; id?: string } | null {
-  // <@id> (Slack/RC formatted)
+// Pull the first tagged target: prefer RingCentral <@id>, else plain @Name
+function extractTaggedTarget(text: string): { mention: string; id?: string } | null {
+  // <@12345> or <@abc-def>
   const idMatch = text.match(/<@([A-Za-z0-9._-]+)>/);
   if (idMatch) {
     const id = String(idMatch[1]);
     return { mention: `<@${id}>`, id };
   }
 
-  // @First Last (allow spaces until punctuation or end of line)
-  // - starts with "@"
-  // - then at least one non-space
-  // - then optionally more words separated by single spaces
-  const nameMatch = text.match(/@([^\s<>@]+(?:\s+[^\s<>@]+)*)/);
+  // Fallback: @Name (no spaces)
+  const nameMatch = text.match(/@([^\s<>@][^\s<>@]*)/);
   if (nameMatch) {
-    // Normalize multiple spaces
-    const name = nameMatch[1].replace(/\s+/g, ' ').trim();
-    return { mention: `@${name}` };
+    return { mention: `@${nameMatch[1]}` };
   }
 
   return null;
 }
+
+export const roastCommand: Command = {
+  name: 'roast',
+  description: 'Roast a tagged user',
+  usage: 'roast',
+  // Match messages that start with "roast"
+  matches: (text) => /^roast\b/i.test(text.trim()),
+  async run(ctx) {
+    const targetObj = extractTaggedTarget(ctx.text || '');
+    const target = targetObj?.mention;
+
+    // if (!target) {
+    //   await ctx.reply('Usage: roast <@id> or roast @Name — tag someone to roast.');
+    //   return;
+    // }
+
+    const line = await generateRoast(target, { style: 'spicy' });
+    await ctx.reply(`🔥 ${line}`);
+  },
+};

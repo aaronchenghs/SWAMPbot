@@ -126,7 +126,7 @@ const ROAST_FALLBACKS = [
  * @param opts.topic - optional context to flavor the roast (short text)
  */
 export async function generateRoast(
-  target: string,
+  target?: string,
   opts?: { style?: "gentle" | "spicy"; topic?: string }
 ): Promise<string> {
   const style = opts?.style ?? "gentle";
@@ -164,9 +164,9 @@ export async function generateRoast(
     if (line) return line;
 
     // Fallback to a local line if the model returned nothing
-    return randFrom(ROAST_FALLBACKS).replace("{target}", target);
+    return randFrom(ROAST_FALLBACKS).replace("{target}", target?? 'Curtis');
   } catch {
     // Network / API error fallback
-    return randFrom(ROAST_FALLBACKS).replace("{target}", target);
+    return randFrom(ROAST_FALLBACKS).replace("{target}", target ?? 'Curtis');
   }
 }
