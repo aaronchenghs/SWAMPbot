@@ -14,6 +14,7 @@ import { resolveDisplayName } from '../services/names.service';
 export const webhookRouter = Router();
 
 webhookRouter.post('/', json(), async (req, res) => {
+  console.log('Webhook received:', req.body);
   // Subscription API handshake (not used if you set webhooks in console)
   const validation = req.get('Validation-Token');
   if (validation) {
@@ -22,8 +23,11 @@ webhookRouter.post('/', json(), async (req, res) => {
   }
 
   // Console “Enable bot webhooks” verification
-  const vt = req.get('Verification-Token');
-  if (APP_CONFIG.VERIFICATION_TOKEN && vt !== APP_CONFIG.VERIFICATION_TOKEN) {
+  const vToken = req.get('Verification-Token');
+  if (
+    APP_CONFIG.VERIFICATION_TOKEN &&
+    vToken !== APP_CONFIG.VERIFICATION_TOKEN
+  ) {
     console.warn('Webhook rejected: bad verification token');
     return res.status(401).end();
   }
@@ -33,7 +37,7 @@ webhookRouter.post('/', json(), async (req, res) => {
   try {
     const body: AnyRecord = (req.body && (req.body.body || req.body)) || {};
     if (!isTeamMessagingPostEvent(body)) return;
-    const post = await normalizePost(body);
+    const post = normalizePost(body);
     if (post.creatorId === BOT_ID) return; // ignore bot's own messages
 
     await indexMessage(post);
