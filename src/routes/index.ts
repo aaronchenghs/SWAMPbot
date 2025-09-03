@@ -6,7 +6,6 @@ import { testRouter } from '../controllers/test.controller';
 import { debugRouter } from '../controllers/debug.controller';
 
 export const routes = Router();
-routes.get('/healthz', (_req, res) => res.send('ok'));
 routes.use('/webhook', webhookRouter);
 routes.use('/oauth', oauthRouter);
 routes.use(json());

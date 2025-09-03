@@ -1,20 +1,25 @@
 import { buildApp } from './app';
 import { APP_CONFIG } from './config';
 import { restoreAuthIfExists } from './services/ringcentral.service';
-import { ensureSubscription } from './services/subscription.service';
 
 (async () => {
   await restoreAuthIfExists();
 
   const app = buildApp();
-  app.listen(Number(APP_CONFIG.PORT), async () => {
+  const server = app.listen(Number(APP_CONFIG.PORT), () => {
     console.log(`Server listening on ${APP_CONFIG.PORT}`);
-    if (APP_CONFIG.USE_WEBHOOKS === 'true') {
-      setTimeout(() => {
-        ensureSubscription()
-          .then(() => console.log('✅ webhook subscription ensured'))
-          .catch((e) => console.error('ensureSubscription error', e));
-      }, 500);
+  });
+
+  setImmediate(async () => {
+    try {
+      const { routes } = await import('./routes/index');
+      app.use(routes);
+      console.log('✅ routes mounted');
+    } catch (e) {
+      console.error('Failed to mount routes', e);
     }
   });
+
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
 })();

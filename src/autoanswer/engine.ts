@@ -41,10 +41,6 @@ export async function maybeAutoReply(
   const text = (newMsg.text || '').trim();
   if (!text || !QUESTION_REGEX.test(text)) return;
 
-  // Cheap classifier (reduces false positives before calling bigger prompt)
-  const cls = await classifyQuestion(text);
-  if (!cls.isQuestion) return;
-
   const since = Date.now() - LOOKBACK_DAYS * 24 * 3600 * 1000;
   const recent = recentInChat(newMsg.chatId, since);
   if (!recent.length) return;
@@ -52,7 +48,7 @@ export async function maybeAutoReply(
   const rows = recent
     .filter((row) => row.id !== newMsg.id)
     .sort((a, b) => b.createdAt - a.createdAt)
-    .slice(0, 40);
+    .slice(0, 25);
 
   const history = await Promise.all(
     rows.map(async (response) => {

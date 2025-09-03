@@ -6,7 +6,7 @@ import {
 } from '../utils/generalUtils';
 import { APP_CONFIG } from '../config';
 import { ROAST_FALLBACKS } from '../constants';
-import { buildList, trim } from '../utils/webhookUtils';
+import { AI_LIMIT, buildList, trim } from '../utils/webhookUtils';
 
 export const openai = new OpenAI({ apiKey: APP_CONFIG.OPENAI_API_KEY });
 const MODEL = APP_CONFIG.OPENAI_MODEL;
@@ -25,21 +25,22 @@ function getResponseContent(
 // ---- “Is this a question?” classifier → { isQuestion, reason } ----
 export async function classifyQuestion(text: string) {
   const fallback = heuristicIsQuestion(text);
-  const response = await openai.chat.completions.create({
-    model: MODEL,
-    messages: [
-      {
-        role: 'system',
-        content:
-          'Return ONLY a compact JSON object with keys exactly: ' +
-          '{"is_question": boolean, "reason": string}. No other text.',
-      },
-      { role: 'user', content: `Text:\n${text.slice(0, 700)}` },
-    ],
-    max_tokens: MAXTOK_CLASSIFY,
-    temperature: TEMP_CLASSIFY,
-    stream: false,
-  });
+  const response = await AI_LIMIT(() =>
+    openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Classify if the user text is a question. Respond as JSON with keys: {"is_question": boolean, "reason": string}.',
+        },
+        { role: 'user', content: `text: ${text.slice(0, 220)}` },
+      ],
+      max_tokens: MAXTOK_CLASSIFY,
+      temperature: TEMP_CLASSIFY,
+      stream: false,
+    }),
+  );
 
   const json = extractJson(getResponseContent(response));
   if (json && typeof json.is_question !== 'undefined') {
@@ -57,41 +58,28 @@ export async function answerFromHistoryDirect(
   history: Array<{ author: string; when: string; text: string }>,
 ) {
   const list = buildList(history, 16);
-  const response = await openai.chat.completions.create({
-    model: MODEL,
-    messages: [
-      {
-        role: 'system',
-        content:
-          'You detect questions that have already been answered by scanning RECENT MESSAGES from the group chat and produce a concise recap.\n' +
-          'Rules:\n' +
-          '- Only set duplicate=true if at least ONE prior message clearly ANSWERS the question (not another question).\n' +
-          '- An answer from the history may be a yes/no, implication of an answer, or a clear declarative statement (dates, counts, “we are off …”, etc.).\n' +
-          '- Do NOT cite the original question itself as evidence.\n' +
-          '- Keep reply 1–4 concise sentences.\n' +
-          '- The "reply" MUST include at least one [index] citation AND the author name AND date/time for a cited item, e.g. “… (Aug 24, 10:12 PM, Alice)”.\n' +
-          '- After the timestamp, quote the actual message you got the answer from.\n' +
-          'Return ONLY JSON (no prose) with keys exactly:\n' +
-          '{"duplicate": boolean, "confidence": number, "reply": string, "evidence": number[]}',
-      },
-      {
-        role: 'user',
-        content:
-          `QUESTION:\n${newMsg.slice(0, 500)}\n\n` +
-          'RECENT MESSAGES (newest first):\n' +
-          list +
-          '\n\n' +
-          'Rules:\n' +
-          '- If any message clearly answers the question (e.g., says who/what/when OR a yes/no), set duplicate=true.\n' +
-          '- Include author/date in reply if possible, along with the quote of the referenced answer.\n' +
-          '- Keep reply to 1–3 short sentences.\n' +
-          '- If not clearly answered, set duplicate=false and reply empty.',
-      },
-    ],
-    max_tokens: MAXTOK_ANSWER,
-    temperature: TEMP_ANSWER,
-    stream: false,
-  });
+  const response = await AI_LIMIT(() =>
+    openai.chat.completions.create({
+      model: MODEL,
+      messages: [
+        {
+          role: 'system',
+          content:
+            'Decide if the NEW_QUESTION is already answered by RECENT_MESSAGES [1..N]. ' +
+            'Set duplicate=true only if at least one prior message gives a clear answer (yes/no or specific fact). ' +
+            'Reply JSON with keys: {"duplicate": boolean, "confidence": number, "reply": string, "evidence": number[]}. ' +
+            'If duplicate, make reply 1–3 concise sentences and include at least one [index] with author and timestamp and a short quote.',
+        },
+        {
+          role: 'user',
+          content: `NEW_QUESTION:\n${newMsg.slice(0, 220)}\n\nRECENT_MESSAGES (newest first):\n${list}`,
+        },
+      ],
+      max_tokens: MAXTOK_ANSWER,
+      temperature: TEMP_ANSWER,
+      stream: false,
+    }),
+  );
 
   const json = extractJson(getResponseContent(response)) || {};
   return {

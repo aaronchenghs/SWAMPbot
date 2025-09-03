@@ -20,8 +20,8 @@ const Env = z.object({
   // OpenAI tunables (non-secret)
   OPENAI_MODEL: z.string().default('gpt-4o-mini'),
   OPENAI_API_KEY: z.string().min(1),
-  OAI_MAXTOK_CLASSIFY: z.coerce.number().default(96),
-  OAI_MAXTOK_ANSWER: z.coerce.number().default(384),
+  OAI_MAXTOK_CLASSIFY: z.coerce.number().default(40),
+  OAI_MAXTOK_ANSWER: z.coerce.number().default(180),
   OAI_TEMP_CLASSIFY: z.coerce.number().default(0.6),
   OAI_TEMP_ANSWER: z.coerce.number().default(0.6),
 
