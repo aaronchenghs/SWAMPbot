@@ -83,7 +83,7 @@ export async function embed(text: string): Promise<number[]> {
   return response.data[0].embedding;
 }
 
-export function trim(s: string, max = 220) {
+export function trim(s: string, max = 140) {
   s = s || '';
   if (s.length <= max) return s;
   const head = s.slice(0, Math.floor(max * 0.7));

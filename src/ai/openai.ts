@@ -126,8 +126,8 @@ export async function generateRoast(
             'If you use a placeholder, replace it with the target string directly.',
         },
       ],
-      max_tokens: Math.min(80, Number(MAXTOK_ANSWER ?? 120)),
-      temperature: Number(TEMP_ANSWER ?? 0.8),
+      max_tokens: MAXTOK_ANSWER,
+      temperature: TEMP_ANSWER,
       stream: false,
     });
 
