@@ -12,13 +12,22 @@ const MIN_CONF = APP_CONFIG.DEDUP_MIN_CONFIDENCE;
 
 /** Index a message (text + embedding) for later recall */
 export async function indexIncoming(message: MsgRow) {
-  const messageText = (message.text || '').trim();
-  if (messageText.length >= 8) {
-    const embeddedMessage = await embed(messageText);
-    addMessage(message, embeddedMessage);
-  } else {
-    addMessage(message, new Array(1536).fill(0));
-  }
+  const text = (message.text || '').trim();
+  if (!text) return;
+
+  setImmediate(() => {
+    try {
+      addMessage(
+        {
+          ...message,
+          text,
+        },
+        [],
+      );
+    } catch (e) {
+      console.error('indexIncoming addMessage failed', e);
+    }
+  });
 }
 
 /**

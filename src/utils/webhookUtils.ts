@@ -4,6 +4,9 @@ import type { Command } from '../commands/types';
 import { commands } from '../commands';
 import { APP_CONFIG } from '../config';
 import { openai } from '../ai/openai';
+import pLimit from 'p-limit';
+
+export const AI_LIMIT = pLimit(3);
 
 export type PostOptions = {
   parentId?: string;

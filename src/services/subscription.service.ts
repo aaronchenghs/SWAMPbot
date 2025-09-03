@@ -27,6 +27,7 @@ export async function ensureSubscription() {
       deliveryMode: {
         transportType: 'WebHook',
         address: APP_CONFIG.WEBHOOK_URL,
+        verificationToken: APP_CONFIG.VERIFICATION_TOKEN,
       },
       expiresIn: 604799,
     };
